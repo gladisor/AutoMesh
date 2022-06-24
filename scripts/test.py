@@ -6,15 +6,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 ## third party
 import open3d as o3d
 import numpy as np
+from torch.utils.data import Dataset
+from pathlib import Path
 
 ## local source
-import automesh
+from automesh.data import LeftAtriumData
 
-data = o3d.io.read_triangle_mesh("/Users/tristanshah/Desktop/1000shapes/AutoMesh/data/GRIPS22/DE-UKU-02-0001_LeftAtrium.ply")
-print(data)
+if __name__ == '__main__':
 
-# points = np.array(pcd.points)
-# normals = np.array(pcd.normals)
-# covariances = np.array(pcd.covariances)
+    data = LeftAtriumData('data/GRIPS22/')
 
-# print(covariances)
+    data.visualize(0)
