@@ -8,6 +8,7 @@ import open3d as o3d
 import numpy as np
 from torch.utils.data import Dataset
 from pathlib import Path
+import torch
 
 ## local source
 from automesh.data import LeftAtriumData
@@ -16,4 +17,6 @@ if __name__ == '__main__':
 
     data = LeftAtriumData('data/GRIPS22/')
 
-    data.visualize(0)
+    mesh = data.mesh[0]
+
+    mesh
