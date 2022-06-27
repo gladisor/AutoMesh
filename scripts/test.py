@@ -14,14 +14,12 @@ from pathlib import Path
 ## local source
 from automesh.data import LeftAtriumData
 
-
-
 if __name__ == '__main__':
     data = LeftAtriumData('data/GRIPS22/')
-
-    m = GCNConv(3, 1)
-
-    v, e, b = data[0]
-    y = m(v, e.T)
     
-    print(len(y))
+    # m = GCNConv(3, 1)
+
+    # v, e, b = data[0]
+    # y = m(v, e.T)
+
+    # print(len(y))
