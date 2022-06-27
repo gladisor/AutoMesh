@@ -6,16 +6,24 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 ## third party
 import open3d as o3d
 import numpy as np
+from torch.utils.data import Dataset
+import torch_geometric.nn as gnn
+from torch_geometric.nn import GCNConv
+from pathlib import Path
 
 ## local source
-import automesh
+from automesh.data import LeftAtriumData
 
-data = o3d.io.read_triangle_mesh("/Users/tristanshah/Desktop/1000shapes/AutoMesh/data/GRIPS22/DE-UKU-02-0001_LeftAtrium.ply")
-print(data)
-print("HELLO PPL")
+if __name__ == '__main__':
+    data = LeftAtriumData('data/GRIPS22/')
+    v, e, b = data[0]
 
-# points = np.array(pcd.points)
-# normals = np.array(pcd.normals)
-# covariances = np.array(pcd.covariances)
+    print(e)
+    # data.display(10)
+    
+    # m = GCNConv(3, 1)
 
-# print(covariances)
+    # v, e, b = data[0]
+    # y = m(v, e.T)
+
+    # print(len(y))
