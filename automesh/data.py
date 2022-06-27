@@ -7,7 +7,7 @@ import sys
 import open3d as o3d
 import numpy as np
 import torch
-from torch_geometric.data import Dataset
+from torch_geometric.data import Data, Dataset
 from scipy.spatial import distance
 
 class LeftAtriumData(Dataset):
@@ -54,25 +54,11 @@ class LeftAtriumData(Dataset):
             return None
 
     @staticmethod
-    def normalize_heart_data(mesh, branch):
-        mesh = copy.deepcopy(mesh)
-        mesh.translate(mesh.get_center() * -1)
-
-        branch = copy.deepcopy(branch)
-        branch.translate(branch.get_center() * -1)
-
-        scale_coef = 1 / np.linalg.norm(mesh.get_max_bound())
-
-        mesh.scale(scale_coef, mesh.get_center())
-        branch.scale(scale_coef, branch.get_center())
-
-        return (mesh, branch)
-
-    @staticmethod
     def get_edges_from_triangles(triangles: np.array) -> np.array:
         edges = np.concatenate([
             triangles[:, [0, 1]],
-            triangles[:, [1, 2]]])
+            triangles[:, [1, 2]],
+            triangles[:, [0, 2]]], axis = 0)
 
         edges = np.sort(edges, axis = 1)
         edges = np.unique(edges, axis = 0)
@@ -119,17 +105,16 @@ class LeftAtriumData(Dataset):
         branch_points = torch.tensor(d.argmin(axis = 1), dtype = torch.long)
         vertices = torch.tensor(vertices, dtype = torch.float32)
 
-        ## centering and scaling points between -1 and 1
-        vertices = vertices - vertices.mean(dim = 0)
-        norms = vertices.pow(2).sum(dim = 1).sqrt()
-        max_norm = norms[norms.argmax()]
-        vertices = vertices / max_norm
-
-        ## computing connected vertices
         edges = LeftAtriumData.get_edges_from_triangles(np.array(mesh.triangles))
         edges = torch.tensor(edges, dtype = torch.long).T
-        
-        return (vertices, edges, branch_points)
+
+        data = Data(
+            x = vertices,
+            pos = vertices,
+            edge_index = edges,
+            y = branch_points)
+
+        return data
 
     def display(self, idx):
         mesh = copy.deepcopy(o3d.io.read_triangle_mesh(self.mesh_paths[idx]))
