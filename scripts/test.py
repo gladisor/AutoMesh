@@ -16,6 +16,10 @@ from automesh.data import LeftAtriumData
 
 if __name__ == '__main__':
     data = LeftAtriumData('data/GRIPS22/')
+    v, e, b = data[0]
+
+    print(e)
+    # data.display(10)
     
     # m = GCNConv(3, 1)
 

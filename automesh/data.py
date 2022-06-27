@@ -8,16 +8,17 @@ import open3d as o3d
 import numpy as np
 import torch
 from torch_geometric.data import Dataset
+from scipy.spatial import distance
 
 class LeftAtriumData(Dataset):
     def __init__(self, root: str, transform = None, pre_transform=None, pre_filter=None) -> None:
         super().__init__(root, transform, pre_transform, pre_filter)
 
-        if not os.path.isdir(self.raw_dir):
-            raise NotADirectoryError("No raw data folder!")
+        if not os.path.exists(self.raw_dir):
+            raise NotADirectoryError("No raw data folder or data is missing.")
             sys.exit(1)
 
-        self.mesh_paths, self.branch_paths = LeftAtriumData.get_ordered_paths(self.processed_file_names)
+        self.mesh_paths, self.branch_paths = LeftAtriumData.get_ordered_paths(self.raw_file_names)
 
     @property
     def raw_file_names(self):
@@ -53,13 +54,19 @@ class LeftAtriumData(Dataset):
             return None
 
     @staticmethod
-    def normalize_geometry(geom: o3d.geometry.Geometry3D) -> o3d.geometry.Geometry3D:
-        x = copy.deepcopy(geom)
-        x.translate(x.get_center() * -1)
-        scale_coef = 1 / np.linalg.norm(x.get_max_bound())
-        x.scale(scale_coef, x.get_center())
+    def normalize_heart_data(mesh, branch):
+        mesh = copy.deepcopy(mesh)
+        mesh.translate(mesh.get_center() * -1)
 
-        return x
+        branch = copy.deepcopy(branch)
+        branch.translate(branch.get_center() * -1)
+
+        scale_coef = 1 / np.linalg.norm(mesh.get_max_bound())
+
+        mesh.scale(scale_coef, mesh.get_center())
+        branch.scale(scale_coef, branch.get_center())
+
+        return (mesh, branch)
 
     @staticmethod
     def get_edges_from_triangles(triangles: np.array) -> np.array:
@@ -72,39 +79,67 @@ class LeftAtriumData(Dataset):
 
         return edges
 
-    def process(self):
+    # def process(self):
 
-        raw_paths = LeftAtriumData.get_ordered_paths(self.raw_file_names)
-        processed_paths = LeftAtriumData.get_ordered_paths(self.processed_file_names)
+    #     if os.listdir(self.processed_dir):
+    #         return
 
-        if len(raw_paths[0]) != len(raw_paths[1]):
-            raise RuntimeWarning("Number of heart meshes does not match number of branching points!")
+    #     raw_paths = LeftAtriumData.get_ordered_paths(self.raw_file_names)
+    #     processed_paths = LeftAtriumData.get_ordered_paths(self.processed_file_names)
+
+    #     if len(raw_paths[0]) != len(raw_paths[1]):
+    #         raise RuntimeWarning("Number of heart meshes does not match number of branching points!")
         
-        for r_m_path, r_b_path, p_m_path, p_b_path in zip(*raw_paths, *processed_paths):
-            ## load dataset into memory
-            mesh = o3d.io.read_triangle_mesh(r_m_path)
-            branch = o3d.io.read_point_cloud(r_b_path)
+    #     for r_m_path, r_b_path, p_m_path, p_b_path in zip(*raw_paths, *processed_paths):
+    #         ## load dataset into memory
+    #         mesh = o3d.io.read_triangle_mesh(r_m_path)
+    #         branch = o3d.io.read_point_cloud(r_b_path)
 
-            ## normalizing mesh between -1 and 1 and centering
-            mesh = LeftAtriumData.normalize_geometry(mesh)
-            branch = LeftAtriumData.normalize_geometry(branch)
+    #         ## normalizing mesh between -1 and 1 and centering
+    #         mesh, branch = LeftAtriumData.normalize_heart_data(mesh, branch)
 
-            ## save transformed data
-            o3d.io.write_triangle_mesh(p_m_path, mesh)
-            o3d.io.write_point_cloud(p_b_path, branch)
+    #         ## save transformed data
+    #         o3d.io.write_triangle_mesh(p_m_path, mesh)
+    #         o3d.io.write_point_cloud(p_b_path, branch)
 
     def len(self) -> int:
-        return len(self.processed_file_names)
+        return len(self.mesh_paths)
 
     def get(self, idx):
-
+        ## loading from file
         mesh = o3d.io.read_triangle_mesh(self.mesh_paths[idx])
         branch = o3d.io.read_point_cloud(self.branch_paths[idx])
 
-        vertices = torch.tensor(np.array(mesh.vertices), dtype = torch.float32)
-        
-        edges = LeftAtriumData.get_edges_from_triangles(np.array(mesh.triangles))
-        edges = torch.tensor(edges, dtype = torch.long)
-        
-        return (vertices, edges)
+        ## extracting points
+        vertices = np.array(mesh.vertices)
+        branch_points = np.unique(np.array(branch.points), axis = 0)
 
+        ## computing nearest neibhors
+        d = distance.cdist(branch_points, vertices)
+        branch_points = torch.tensor(d.argmin(axis = 1), dtype = torch.long)
+        vertices = torch.tensor(vertices, dtype = torch.float32)
+
+        ## centering and scaling points between -1 and 1
+        vertices = vertices - vertices.mean(dim = 0)
+        norms = vertices.pow(2).sum(dim = 1).sqrt()
+        max_norm = norms[norms.argmax()]
+        vertices = vertices / max_norm
+
+        ## computing connected vertices
+        edges = LeftAtriumData.get_edges_from_triangles(np.array(mesh.triangles))
+        edges = torch.tensor(edges, dtype = torch.long).T
+        
+        return (vertices, edges, branch_points)
+
+    def display(self, idx):
+        mesh = copy.deepcopy(o3d.io.read_triangle_mesh(self.mesh_paths[idx]))
+        branch = o3d.io.read_point_cloud(self.branch_paths[idx])
+
+        for point in np.unique(branch.points, axis = 0):
+            cube = o3d.geometry.TriangleMesh.create_sphere()
+            cube.scale(1, center=cube.get_center())
+            cube.translate(point)
+            mesh += cube
+
+        mesh.compute_vertex_normals()
+        o3d.visualization.draw_geometries([mesh])
