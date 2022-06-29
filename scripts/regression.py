@@ -15,6 +15,10 @@ import torch
 from automesh.data import LeftAtriumData
 
 class GraphRegressor(nn.Module):
+    """
+    A multiple regression model for processing a graph into a feature vector which
+    can be used to predict a set of points.
+    """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
 
@@ -22,9 +26,10 @@ class GraphRegressor(nn.Module):
 
     def forward(self, x: Union[Data, Batch]) -> torch.tensor:
         y = self.base(x.pos, x.edge_index)
-        return global_mean_pool(y, x.batch)
+        return torch.tanh(global_mean_pool(y, x.batch))
 
-        # return global_mean_pool(self.g(v, e).relu(), batch)
+    def predict(self, x: Union[Data, Batch]) -> torch.tensor:
+        
 
 if __name__ == '__main__':
 
@@ -43,7 +48,7 @@ if __name__ == '__main__':
         dropout = 0.0,
         act = torch.relu)
 
-    opt = torch.optim.Adam(model.parameters(), lr = 0.001)
+    opt = torch.optim.Adam(model.parameters(), lr = 0.0005)
     loss_func = nn.MSELoss()
 
     train_loader = DataLoader(
@@ -60,7 +65,7 @@ if __name__ == '__main__':
             opt.zero_grad()
 
             y_hat = model(batch)
-            
+
             branch_points = []
             for graph in batch.to_data_list():
                 branch_points.append(graph.pos[graph.y])

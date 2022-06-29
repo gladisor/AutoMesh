@@ -11,24 +11,33 @@ from torch_geometric.data import Data, Dataset
 from scipy.spatial import distance
 
 class LeftAtriumData(Dataset):
+    """
+    Extracts information from a set of .ply files located in {root}/raw. Handles
+    preprocessing and construction of a torch_geometric graph automatically. Will
+    also apply any transformations specified. Labels for each data point will be
+    the indexes of verticies in the mesh which are closest to the branching points
+    contained in the LeftAtriumBranchPoints.ply files.
+    """
     def __init__(self, root: str, closest_k: int = 1, transform = None, pre_transform=None, pre_filter=None) -> None:
         super().__init__(root, transform, pre_transform, pre_filter)
 
+        ## check for incorrect file structure
         if not os.path.exists(self.raw_dir):
             raise NotADirectoryError("No raw data folder or data is missing.")
             sys.exit(1)
 
+        ## grab the paths to the meshes and branch points in order
         self.mesh_paths, self.branch_paths = LeftAtriumData.get_ordered_paths(self.raw_file_names)
         self.closest_k = closest_k
 
     @property
-    def raw_file_names(self):
+    def raw_file_names(self) -> List[str]:
         paths = Path(self.raw_dir).glob('*.ply')
         paths = [x.as_posix() for x in paths]
         return paths
 
     @property
-    def processed_file_names(self):
+    def processed_file_names(self) -> List[str]:
         paths = Path(self.raw_dir).glob('*.ply')
         paths = [Path(self.processed_dir) / path.name for path in paths]
         paths = [x.as_posix() for x in paths]
@@ -43,11 +52,11 @@ class LeftAtriumData(Dataset):
         ## sort by heart id
         mesh_paths = sorted(mesh_paths, key = LeftAtriumData.parse_heart_id)
         branch_paths = sorted(branch_paths, key = LeftAtriumData.parse_heart_id)
-
         return (mesh_paths, branch_paths)
 
     @staticmethod
     def parse_heart_id(path: str) -> int:
+        ## extract the id from each file name
         if '_LeftAtrium.ply' or 'LeftAtriumBranchPoints.ply' in path:
             heart_id = path.split('_LeftAtrium')[-2].split('-')[-1]
             return int(heart_id)
@@ -69,7 +78,7 @@ class LeftAtriumData(Dataset):
     def len(self) -> int:
         return len(self.mesh_paths)
 
-    def get(self, idx):
+    def get(self, idx) -> Data:
         ## loading from file
         mesh = o3d.io.read_triangle_mesh(self.mesh_paths[idx])
         branch = o3d.io.read_point_cloud(self.branch_paths[idx])
@@ -85,6 +94,7 @@ class LeftAtriumData(Dataset):
         mesh_branch_points = torch.tensor(d).topk(k = self.closest_k, dim = 1, largest = False).indices.squeeze(-1)
         vertices = torch.tensor(vertices, dtype = torch.float32)
 
+        ## create a torch_geometric Data object which holds information about a graph
         data = Data(
             x = vertices,
             pos = vertices,
@@ -93,7 +103,8 @@ class LeftAtriumData(Dataset):
 
         return data
 
-    def display(self, idx):
+    def display(self, idx) -> None:
+        ## function which renders the mesh and branching points of a particular data point
         mesh = copy.deepcopy(o3d.io.read_triangle_mesh(self.mesh_paths[idx]))
         branch = o3d.io.read_point_cloud(self.branch_paths[idx])
 
