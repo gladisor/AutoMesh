@@ -1,11 +1,13 @@
 ## allows us to access the automesh library from outside
 import os
 import sys
+from typing import Union
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import torch_geometric.transforms as T
-from torch_geometric.nn import GCNConv, global_mean_pool
+from torch_geometric.nn import GCN, global_mean_pool
 from torch_geometric.loader import DataLoader
+from torch_geometric.data import Data, Batch
 import torch.nn as nn
 import torch
 
@@ -13,15 +15,19 @@ import torch
 from automesh.data import LeftAtriumData
 
 class GraphRegressor(nn.Module):
-    def __init__(self, in_channels, out_channels) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__()
 
-        self.g = GCNConv(in_channels, out_channels)
+        self.base = GCN(*args, **kwargs)
 
-    def forward(self, v, e, batch) -> torch.tensor:
-        return global_mean_pool(self.g(v, e).relu(), batch)
+    def forward(self, x: Union[Data, Batch]) -> torch.tensor:
+        y = self.base(x.pos, x.edge_index)
+        return global_mean_pool(y, x.batch)
+
+        # return global_mean_pool(self.g(v, e).relu(), batch)
 
 if __name__ == '__main__':
+
     data = LeftAtriumData(
         root = 'data/GRIPS22/',
         transform = T.Compose([
@@ -29,15 +35,22 @@ if __name__ == '__main__':
             T.NormalizeScale(),
         ]))
 
+    model = GraphRegressor(
+        in_channels = 3,
+        hidden_channels = 128,
+        num_layers = 3,
+        out_channels = 24,
+        dropout = 0.0,
+        act = torch.relu)
+
+    opt = torch.optim.Adam(model.parameters(), lr = 0.001)
+    loss_func = nn.MSELoss()
+
     train_loader = DataLoader(
         dataset = data,
         batch_size = 4,
         shuffle = True,
         drop_last = True)
-
-    model = GraphRegressor(3, 24)
-    opt = torch.optim.Adam(model.parameters(), lr = 0.001)
-    loss_func = nn.MSELoss()
 
     for epoch in range(10):
         for batch in train_loader:
@@ -45,8 +58,9 @@ if __name__ == '__main__':
                 continue
             
             opt.zero_grad()
-            y_hat = model(batch.pos, batch.edge_index, batch.batch)
 
+            y_hat = model(batch)
+            
             branch_points = []
             for graph in batch.to_data_list():
                 branch_points.append(graph.pos[graph.y])
