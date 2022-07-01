@@ -13,6 +13,9 @@ import torch.nn as nn
 import torch
 import open3d as o3d
 import numpy as np
+from scipy.spatial import distance
+from scipy.special import softmax
+
 
 ## local source
 from automesh.data import LeftAtriumData
@@ -33,37 +36,7 @@ class GraphRegressor(nn.Module):
 
     def forward(self, x: Union[Data, Batch]) -> torch.tensor:
         y = self.base(x.pos, x.edge_index)
-        return global_mean_pool(y, x.batch)
-
-    def train(self, loader: DataLoader):
-        opt = torch.optim.Adam(self.parameters(), lr = 0.0005)
-        loss_func = nn.MSELoss()
-
-        for epoch in range(5):
-            for batch in loader:
-                if epoch == 0:
-                    continue
-                
-                opt.zero_grad()
-
-                y_hat = self(batch)
-
-                branch_points = []
-                for graph in batch.to_data_list():
-                    branch_points.append(graph.pos[graph.y])
-
-                y = torch.cat(branch_points)
-                y = y.reshape(batch.num_graphs, -1)
-                loss = loss_func(y_hat, y)
-                loss.backward()
-                opt.step()
-
-                print(f"Loss: {loss}")
-
-                test_graph = batch.get_example(0)
-                with torch.no_grad():
-                    predicted_branch_points = self(test_graph).reshape(8, 3)
-                    branch_points = test_graph.pos[test_graph.y]
+        return torch.tanh(global_mean_pool(y, x.batch))
 
 def create_spheres(pc: o3d.geometry.PointCloud, scale: float, color: np.array) -> List[o3d.geometry.TriangleMesh]:
     spheres = []
@@ -76,14 +49,51 @@ def create_spheres(pc: o3d.geometry.PointCloud, scale: float, color: np.array) -
 
     return spheres
 
+def batch_branch_points(batch: Batch) -> torch.tensor:
+
+        branch_points = []
+        for graph in batch.to_data_list():
+            branch_points.append(graph.pos[graph.y])
+
+        y = torch.cat(branch_points)
+        y = y.reshape(batch.num_graphs, -1)
+
+        return y
+
+class RandomScaleAxis(T.BaseTransform):
+    def __init__(self, scale: float, axis: int) -> None:
+        super().__init__()
+
+        self.scale = scale
+        self.axis = 0
+
+    def __call__(self, data: Data) -> Data:
+        torch.random.uniform(-self.scale, self.scale)
+
 if __name__ == '__main__':
 
     data = LeftAtriumData(
         root = 'data/GRIPS22/',
         transform = T.Compose([
+            T.ToUndirected(),
             T.Center(),
-            T.NormalizeScale()
+            T.RandomRotate(180, axis = 0),
+            T.RandomRotate(180, axis = 1),
+            T.RandomRotate(180, axis = 2),
+            T.NormalizeScale(),
             ]))
+
+    idx = torch.randperm(len(data))
+    split = int(len(data) * 0.9)
+
+    train_data = DataLoader(
+        dataset = torch.utils.data.Subset(data, idx[:split]),
+        batch_size = 4,
+        shuffle = True,
+        drop_last = True)
+
+    val_data = torch.utils.data.Subset(data, idx[split:])
+    val_batch = Batch.from_data_list(list(val_data[:len(val_data)]))
 
     model = GraphRegressor(
         hidden_channels = 128,
@@ -91,29 +101,39 @@ if __name__ == '__main__':
         dropout = 0.0,
         act = torch.relu)
 
-    opt = torch.optim.Adam(model.parameters(), lr = 0.0005)
+    opt = torch.optim.SGD(model.parameters(), lr = 0.001)
     loss_func = nn.MSELoss()
 
-    train_loader = DataLoader(
-        dataset = data,
-        batch_size = 4,
-        shuffle = True,
-        drop_last = True)
+    for epoch in range(5):
+        for batch in train_data:
+            opt.zero_grad()
 
-    # model.train(train_loader)
+            y_hat = model(batch)
+            y = batch_branch_points(batch)
 
-    graph = data[0]
+            loss = loss_func(y_hat, y)
+            loss.backward()
+            opt.step()
 
-    points = model(graph).reshape(8, 3).detach().numpy()
-    points = o3d.utility.Vector3dVector(points)
-    points = o3d.geometry.PointCloud(points)
+            with torch.no_grad():
+                val_y_hat = model(val_batch)
+                val_y = batch_branch_points(val_batch)
+                val_loss = loss_func(val_y_hat, val_y)
 
-    points = create_spheres(points, 0.005, np.array([1.0, 0.0, 0.0]))
+            print(f"Train Loss: {loss}, Val Loss: {val_loss}")
 
-    branch_points = graph.pos[graph.y]
-    branch_points = o3d.utility.Vector3dVector(branch_points)
-    branch_points = o3d.geometry.PointCloud(branch_points)
-    points += create_spheres(branch_points, 0.005, np.array([0.0, 1.0, 0.0]))
+    # # graph = data[0]
 
-    o3d.visualization.draw_geometries(points)
+    # # points = model(graph).reshape(8, 3).detach().numpy()
+    # # points = o3d.utility.Vector3dVector(points)
+    # # points = o3d.geometry.PointCloud(points)
+
+    # # points = create_spheres(points, 0.005, np.array([1.0, 0.0, 0.0]))
+
+    # # branch_points = graph.pos[graph.y]
+    # # branch_points = o3d.utility.Vector3dVector(branch_points)
+    # # branch_points = o3d.geometry.PointCloud(branch_points)
+    # # points += create_spheres(branch_points, 0.005, np.array([0.0, 1.0, 0.0]))
+
+    # # o3d.visualization.draw_geometries(points)
     

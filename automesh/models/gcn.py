@@ -18,8 +18,6 @@ class PointClassifier(BaseGCN):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        
-
 if __name__ == '__main__':
     model = BaseGCN(
         in_channels = 3,
