@@ -105,3 +105,4 @@ class LeftAtriumData(Dataset):
 
         mesh.compute_vertex_normals()
         o3d.visualization.draw_geometries([mesh])
+        
