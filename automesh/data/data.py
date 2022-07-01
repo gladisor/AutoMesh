@@ -21,7 +21,7 @@ class LeftAtriumData(Dataset):
     """
     def __init__(self, 
             root: str, 
-            triangles: int = 2000, 
+            triangles: int = 5000, 
             transform = None, 
             pre_transform = None,
             pre_filter = None) -> None:
@@ -123,8 +123,8 @@ class LeftAtriumData(Dataset):
 class LeftAtriumHeatMapData(LeftAtriumData):
     def __init__(self, 
             root: str, 
-            sigma: float,
-            triangles: int = 2000,
+            sigma: float = 1.0,
+            triangles: int = 5000,
             transform=None, 
             pre_transform=None, 
             pre_filter=None) -> None:
@@ -141,8 +141,20 @@ class LeftAtriumHeatMapData(LeftAtriumData):
         branch_points = data.pos[data.y]
 
         D = distance.cdist(data.pos, branch_points)
-        H = np.exp(- np.power(D, 2) / (2 * self.sigma))
+        H = np.exp(- np.power(D, 2) / (2 * self.sigma ** 2))
 
         data.y = H
 
         return data
+    
+    def display(self, idx) -> None:
+        H = self[idx].y
+        color = np.zeros((H.shape[0], 3))
+        color[:, 0] = H.sum(axis = 1)
+        color[:, 2] = 0.4
+
+        ## function which renders the mesh and branching points of a particular data point
+        mesh = copy.deepcopy(o3d.io.read_triangle_mesh(self.mesh_paths[idx]))
+        mesh.vertex_colors = o3d.utility.Vector3dVector(color)
+        mesh.compute_vertex_normals()
+        o3d.visualization.draw_geometries([mesh])
