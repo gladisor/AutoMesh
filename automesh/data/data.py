@@ -28,10 +28,6 @@ class LeftAtriumData(Dataset):
 
         self.root = root
         ## check for incorrect file structure
-        if not os.path.exists(self.raw_dir):
-            raise NotADirectoryError("No raw data folder or data is missing.")
-            sys.exit(1)
-
         self.triangles = triangles
         ## grab the paths to the meshes and branch points in order
         self.mesh_paths, self.branch_paths = LeftAtriumData.get_ordered_paths(self.processed_file_names)
