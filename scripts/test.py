@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import torch_geometric.transforms as T
 
 ## local source
-from automesh.data import LeftAtriumData, LeftAtriumHeatMapData
+from automesh.data.data import LeftAtriumData, LeftAtriumHeatMapData
 
 if __name__ == '__main__':
     data = LeftAtriumHeatMapData(

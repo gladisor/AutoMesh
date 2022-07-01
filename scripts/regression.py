@@ -18,7 +18,7 @@ from scipy.special import softmax
 
 
 ## local source
-from automesh.data import LeftAtriumData
+from automesh.data.data import LeftAtriumData
 
 class GraphRegressor(nn.Module):
     """
