@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 import copy
 from pathlib import Path
 import os
@@ -7,9 +7,9 @@ import sys
 import open3d as o3d
 import numpy as np
 import torch
+import torch.nn as nn
 from torch_geometric.data import Data, Dataset
 from scipy.spatial import distance
-from scipy.special import softmax
 
 class LeftAtriumData(Dataset):
     """
@@ -19,19 +19,14 @@ class LeftAtriumData(Dataset):
     the indexes of verticies in the mesh which are closest to the branching points
     contained in the LeftAtriumBranchPoints.ply files.
     """
-    def __init__(self, 
-            root: str, 
-            triangles: int = 5000, 
-            transform = None, 
-            pre_transform = None,
-            pre_filter = None) -> None:
+    def __init__(self, root: str, triangles: int = 5000, transform = None, **kwargs) -> None:
 
         self.root = root
         ## check for incorrect file structure
         self.triangles = triangles
         ## grab the paths to the meshes and branch points in order
         self.mesh_paths, self.branch_paths = LeftAtriumData.get_ordered_paths(self.processed_file_names)
-        super().__init__(root, transform, pre_transform, pre_filter)
+        super().__init__(root, transform, **kwargs)
 
     @property
     def raw_file_names(self) -> List[str]:
@@ -121,15 +116,9 @@ class LeftAtriumData(Dataset):
         o3d.visualization.draw_geometries([mesh])
 
 class LeftAtriumHeatMapData(LeftAtriumData):
-    def __init__(self, 
-            root: str, 
-            sigma: float = 1.0,
-            triangles: int = 5000,
-            transform=None, 
-            pre_transform=None, 
-            pre_filter=None) -> None:
+    def __init__(self, root: str, sigma: float = 1.0, **kwargs) -> None:
 
-        super().__init__(root, triangles, transform, pre_transform, pre_filter)
+        super().__init__(root, **kwargs)
         self.sigma = sigma
 
     def process(self) -> None:
@@ -137,24 +126,40 @@ class LeftAtriumHeatMapData(LeftAtriumData):
 
     def get(self, idx: int) -> Data:
         data = super().get(idx)
-
         branch_points = data.pos[data.y]
-
         D = distance.cdist(data.pos, branch_points)
         H = np.exp(- np.power(D, 2) / (2 * self.sigma ** 2))
-
-        data.y = H
-
+        data.y = torch.tensor(H, dtype = torch.float32)
         return data
     
-    def display(self, idx) -> None:
+    def display(self, idx: int) -> None:
+
         H = self[idx].y
         color = np.zeros((H.shape[0], 3))
-        color[:, 0] = H.sum(axis = 1)
+        # color[:, 0] = H.sum(axis = 1)
+        color[:, 0] = H[:, 6]
         color[:, 2] = 0.4
 
         ## function which renders the mesh and branching points of a particular data point
         mesh = copy.deepcopy(o3d.io.read_triangle_mesh(self.mesh_paths[idx]))
         mesh.vertex_colors = o3d.utility.Vector3dVector(color)
+        mesh.compute_vertex_normals()
+        o3d.visualization.draw_geometries([mesh])
+
+    def visualize_predicted_heat_map(self, idx: int, model: nn.Module) -> None:
+        x = self[idx]
+        hm = model(x)
+        color = np.zeros((hm.shape[0], 3))
+        color[:, 0] = hm.detach().sum(dim = 1).numpy()
+        color[:, 2] = 0.4
+
+        print(hm.max())
+
+        print(color)
+
+        ## function which renders the mesh and branching points of a particular data point
+        mesh = copy.deepcopy(o3d.io.read_triangle_mesh(self.mesh_paths[idx]))
+        mesh.vertex_colors = o3d.utility.Vector3dVector(color)
+
         mesh.compute_vertex_normals()
         o3d.visualization.draw_geometries([mesh])

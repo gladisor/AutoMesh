@@ -16,7 +16,6 @@ import numpy as np
 from scipy.spatial import distance
 from scipy.special import softmax
 
-
 ## local source
 from automesh.data.data import LeftAtriumData
 
