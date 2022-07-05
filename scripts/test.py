@@ -95,6 +95,8 @@ if __name__ == '__main__':
             loss = 0.0
             for c in range(y_hat.shape[1]):
                 loss += loss_func(y_hat[:, c], batch.y[:, c])
+            
+            loss = loss.mean()
 
             print(f'Train Loss: {loss}')
 
