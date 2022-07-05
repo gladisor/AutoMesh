@@ -2,6 +2,7 @@ from ast import Call
 from typing import Callable, Union
 
 import torch
+import torch.nn as nn
 from torch_geometric.nn import GraphSAGE
 from torch_geometric.nn.models.basic_gnn import BasicGNN
 from torch_geometric.data import Data, Batch

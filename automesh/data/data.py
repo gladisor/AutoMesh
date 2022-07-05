@@ -148,12 +148,12 @@ class LeftAtriumHeatMapData(LeftAtriumData):
 
     def visualize_predicted_heat_map(self, idx: int, model: nn.Module) -> None:
         x = self[idx]
-        # hm = model(x)
         hm = model(
             x = x.pos,
             edge_index = x.edge_index,
-            edge_attr = x.edge_attr)
-            
+            # edge_attr = x.edge_attr
+            )
+
         color = np.zeros((hm.shape[0], 3))
         hm, _ = hm.detach().max(dim = 1)
         color[:, 0] = hm.numpy()
