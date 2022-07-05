@@ -15,11 +15,9 @@ def split(data: Dataset, p: float) -> Tuple[Subset, Subset]:
 
 def preprocess_pipeline() -> Callable:
     return T.Compose([
-        # T.GenerateMeshNormals(),
         T.FaceToEdge(),
         T.Center(),
         T.NormalizeScale(),
-        # T.PointPairFeatures()
     ])
     
 def augmentation_pipeline() -> Callable:

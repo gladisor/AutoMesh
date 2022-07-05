@@ -1,35 +1,27 @@
+from ast import Call
 from typing import Callable, Union
 
-import torch.nn as nn
 import torch
 from torch_geometric.nn import GraphSAGE
+from torch_geometric.nn.models.basic_gnn import BasicGNN
 from torch_geometric.data import Data, Batch
 
 class HeatMapRegressor(nn.Module):
-    def __init__(self, 
-        hidden_channels: int, 
-        num_layers: int, 
-        num_landmarks: int, 
-        dropout: float,
-        act: Callable,
-        lr: float):
+    def __init__(self,
+        base: BasicGNN,
+        loss_func: Callable,
+        lr: float,
+        **kwargs):
+    
         super().__init__()
 
-        self.base = GraphSAGE(
-            in_channels = 3,
-            hidden_channels = hidden_channels,
-            num_layers = num_layers,
-            out_channels = num_landmarks,
-            dropout = dropout,
-            act = act,
-            # edge_dim = 4
-            )
+        self.base = base(**kwargs)
 
         self.opt = torch.optim.Adam(self.parameters(), lr = lr)
-        self.loss_func = nn.MSELoss(reduction = 'none')
+        self.loss_func = loss_func
 
-    def forward(self, x: Union[Data, Batch]) -> torch.tensor:
-        return self.base(x.pos, x.edge_index)
+    def forward(self, **kwargs) -> torch.tensor:
+        return self.base(**kwargs)
 
     def calculate_loss(
             self, 
