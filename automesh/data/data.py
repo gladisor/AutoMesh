@@ -158,7 +158,6 @@ class LeftAtriumHeatMapData(LeftAtriumData):
         hm, _ = hm.detach().max(dim = 1)
         color[:, 0] = hm.numpy()
         # color[:, 0] = hm.detach().sum(dim = 1).numpy()
-        # color[:, 0], _ = hm.detach().max(dim = 1).numpy()
         color[:, 2] = 0.4
         ## function which renders the mesh and branching points of a particular data point
         mesh = copy.deepcopy(o3d.io.read_triangle_mesh(self.mesh_paths[idx]))

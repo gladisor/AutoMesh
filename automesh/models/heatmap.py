@@ -31,7 +31,12 @@ class HeatMapRegressor(nn.Module):
             weight: float = 10.0,
             threshold: float = 0.2) -> torch.tensor:
 
-        M = torch.zeros(y.shape)
-        M[y > threshold] = 1
-        loss = (self.loss_func(y_hat, y) *  (M * weight + 1)).mean()
-        return loss
+        # M = torch.zeros(y.shape)
+        # M[y > threshold] = 1
+        # loss = (self.loss_func(y_hat, y) *  (M * weight + 1)).mean()
+
+        loss = 0.0
+        for c in range(y_hat.shape[1]):
+            loss += self.loss_func(y_hat[:, c], y[:, c])
+
+        return loss.mean()

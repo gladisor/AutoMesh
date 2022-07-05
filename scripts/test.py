@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import torch_geometric.transforms as T
 from torch_geometric.loader import DataLoader
-from torch_geometric.nn import MessagePassing, SplineConv, GCN, GAT, GraphSAGE
+from torch_geometric.nn import MessagePassing, SplineConv, GCN, GAT, GraphSAGE, GraphUNet
 from torch_geometric.nn.models.basic_gnn import BasicGNN
 
 ## local source
@@ -66,18 +66,19 @@ if __name__ == '__main__':
     loader = DataLoader(train, batch_size = 4, shuffle = True, drop_last = True)
 
     model = HeatMapRegressor(
-        base = GraphSAGE,
-        loss_func = nn.MSELoss(reduction = 'none'),
+        # base = GraphSAGE,
+        base = GraphUNet,
+        # loss_func = nn.MSELoss(reduction = 'none'),
+        loss_func = AdaptiveWingLoss(),
         lr = 0.001,
         in_channels = 3,
         hidden_channels = 256,
-        num_layers = 4,
+        # num_layers = 4,
+        depth = 4,
         out_channels = 8,
         act = torch.relu,
         # edge_dim = 3
         )
-
-    loss_func = AdaptiveWingLoss()
 
     model.train()
 
@@ -85,19 +86,11 @@ if __name__ == '__main__':
         for batch in loader:
             model.opt.zero_grad()
 
-            y_hat = model(
-                x = batch.pos,
-                edge_index = batch.edge_index,
+            y_hat = model(x = batch.pos, edge_index = batch.edge_index, 
                 # edge_attr = batch.edge_attr
                 )
 
-            # loss = model.calculate_loss(y_hat, batch.y)
-            loss = 0.0
-            for c in range(y_hat.shape[1]):
-                loss += loss_func(y_hat[:, c], batch.y[:, c])
-            
-            loss = loss.mean()
-
+            loss = model.calculate_loss(y_hat, batch.y)
             print(f'Train Loss: {loss}')
 
             loss.backward()
