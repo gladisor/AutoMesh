@@ -21,7 +21,7 @@ from automesh.utils.data import split, preprocess_pipeline, augmentation_pipelin
 class AdaptiveWingLoss(nn.Module):
     def __init__(
         self, 
-        omega: float = 14.0, 
+        omega: float = 14.0,
         theta: float = 0.5,
         epsilon: float = 1.0,
         alpha: float = 2.1) -> None:
@@ -59,44 +59,45 @@ if __name__ == '__main__':
         transform = T.Compose([
             preprocess_pipeline(),
             augmentation_pipeline(),
-            # T.Cartesian()
             ]))
 
     train, val = split(data, 0.9)
     loader = DataLoader(train, batch_size = 4, shuffle = True, drop_last = True)
 
     model = HeatMapRegressor(
-        # base = GraphSAGE,
-        base = GraphUNet,
-        # loss_func = nn.MSELoss(reduction = 'none'),
+        base = GraphSAGE,
         loss_func = AdaptiveWingLoss(),
         lr = 0.001,
         in_channels = 3,
         hidden_channels = 256,
-        # num_layers = 4,
-        depth = 4,
+        num_layers = 4,
         out_channels = 8,
-        act = torch.relu,
-        # edge_dim = 3
-        )
+        act = torch.relu)
 
     model.train()
 
-    for epoch in range(10):
-        for batch in loader:
-            model.opt.zero_grad()
+    # for epoch in range(10):
+    #     for batch in loader:
+    #         model.opt.zero_grad()
 
-            y_hat = model(x = batch.pos, edge_index = batch.edge_index, 
-                # edge_attr = batch.edge_attr
-                )
+    #         y_hat = model(batch)
 
-            loss = model.calculate_loss(y_hat, batch.y)
-            print(f'Train Loss: {loss}')
+    #         loss = model.calculate_loss(y_hat, batch.y)
+    #         print(f'Train Loss: {loss}')
 
-            loss.backward()
-            model.opt.step()
+    #         loss.backward()
+    #         model.opt.step()
 
     model.eval()
+
+    # for i in range(len(val)):
+    #     x = val[i]
+    #     pred_points = HeatMapRegressor.predict_points(model(x), x.x)
+    #     true_points = HeatMapRegressor.predict_points(x.y, x.x)
+    #     d = HeatMapRegressor.normalized_mean_error(pred_points, true_points)
+    #     print(d)
+
     val.dataset.visualize_predicted_heat_map(3, model)
-    val.dataset.visualize_predicted_heat_map(10, model)
-    val.dataset.visualize_predicted_heat_map(5, model)
+    val.dataset.visualize_predicted_points(3, model)
+    # val.dataset.visualize_predicted_heat_map(10, model)
+    # val.dataset.visualize_predicted_heat_map(5, model)

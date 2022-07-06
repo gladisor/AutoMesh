@@ -3,6 +3,7 @@ import copy
 from pathlib import Path
 import os
 import sys
+from automesh.models.heatmap import HeatMapRegressor
 
 import open3d as o3d
 import numpy as np
@@ -136,8 +137,8 @@ class LeftAtriumHeatMapData(LeftAtriumData):
 
         H = self[idx].y
         color = np.zeros((H.shape[0], 3))
-        # color[:, 0] = H.sum(axis = 1)
-        color[:, 0] = H[:, 6]
+        H, _ = H.max(dim = 1)
+        color[:, 0] = H.numpy()
         color[:, 2] = 0.4
 
         ## function which renders the mesh and branching points of a particular data point
@@ -148,20 +149,30 @@ class LeftAtriumHeatMapData(LeftAtriumData):
 
     def visualize_predicted_heat_map(self, idx: int, model: nn.Module) -> None:
         x = self[idx]
-        hm = model(
-            x = x.pos,
-            edge_index = x.edge_index,
-            # edge_attr = x.edge_attr
-            )
-
+        hm = model(x)
         color = np.zeros((hm.shape[0], 3))
-        hm, _ = hm.detach().max(dim = 1)
-        color[:, 0] = hm.numpy()
-        # color[:, 0] = hm.detach().sum(dim = 1).numpy()
+        hm_all, _ = hm.detach().max(dim = 1)
+        color[:, 0] = hm_all.numpy()
         color[:, 2] = 0.4
         ## function which renders the mesh and branching points of a particular data point
         mesh = copy.deepcopy(o3d.io.read_triangle_mesh(self.mesh_paths[idx]))
         mesh.vertex_colors = o3d.utility.Vector3dVector(color)
+
+        mesh.compute_vertex_normals()
+        o3d.visualization.draw_geometries([mesh])
+
+    def visualize_predicted_points(self, idx: int, model: nn.Module) -> None:
+        x = self[idx]
+        hm = model(x)
+
+        mesh = copy.deepcopy(o3d.io.read_triangle_mesh(self.mesh_paths[idx]))
+        points = HeatMapRegressor.predict_points(hm, x.x)
+
+        for point in points:
+            sphere = o3d.geometry.TriangleMesh.create_sphere()
+            sphere.scale(1, center=sphere.get_center())
+            sphere.translate(point)
+            mesh += sphere
 
         mesh.compute_vertex_normals()
         o3d.visualization.draw_geometries([mesh])
