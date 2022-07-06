@@ -6,6 +6,8 @@ from torch_geometric.nn import GraphSAGE
 from torch_geometric.nn.models.basic_gnn import BasicGNN
 from torch_geometric.data import Data, Batch
 
+from automesh.models.architectures import BaseArchitecture
+
 class HeatMapRegressor(nn.Module):
     def __init__(self,
         base: BasicGNN,

@@ -8,13 +8,13 @@ import torch
 import torch.nn as nn
 import torch_geometric.transforms as T
 from torch_geometric.loader import DataLoader
-from torch_geometric.nn import MessagePassing, SplineConv, GCN, GAT, GraphSAGE, GraphUNet
-from torch_geometric.nn.models.basic_gnn import BasicGNN
+from torch_geometric.nn import GCN, GAT, GraphSAGE, GraphUNet
 
 ## local source
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
-from automesh.utils.data import split, preprocess_pipeline, augmentation_pipeline
+from automesh.utils import split
+from automesh.data.transforms import preprocess_pipeline, augmentation_pipeline
 
 ## adapted from:
 # https://github.com/elliottzheng/AdaptiveWingLoss/blob/master/adaptive_wing_loss.py
@@ -90,12 +90,12 @@ if __name__ == '__main__':
 
     model.eval()
 
-    # for i in range(len(val)):
-    #     x = val[i]
-    #     pred_points = HeatMapRegressor.predict_points(model(x), x.x)
-    #     true_points = HeatMapRegressor.predict_points(x.y, x.x)
-    #     d = HeatMapRegressor.normalized_mean_error(pred_points, true_points)
-    #     print(d)
+    for i in range(len(val)):
+        x = val[i]
+        pred_points = HeatMapRegressor.predict_points(model(x), x.x)
+        true_points = HeatMapRegressor.predict_points(x.y, x.x)
+        d = HeatMapRegressor.normalized_mean_error(pred_points, true_points)
+        print(d)
 
     val.dataset.visualize_predicted_heat_map(3, model)
     val.dataset.visualize_predicted_points(3, model)
