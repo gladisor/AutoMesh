@@ -8,12 +8,14 @@ import torch
 import torch.nn as nn
 import torch_geometric.transforms as T
 from torch_geometric.loader import DataLoader
+from torch_geometric.data import LightningDataset
 from torch_geometric.nn import GCN, GAT, GraphSAGE, GraphUNet
+from pytorch_lightning import Trainer
+from pytorch_lightning.plugins import SingleDevicePlugin
 
 ## local source
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
-from automesh.utils import split
 from automesh.data.transforms import preprocess_pipeline, augmentation_pipeline
 
 ## adapted from:
@@ -52,21 +54,35 @@ class AdaptiveWingLoss(nn.Module):
         return (loss1.sum() + loss2.sum()) / (len(loss1) + len(loss2))
 
 if __name__ == '__main__':
-    data = LeftAtriumHeatMapData(
-        root = 'data/GRIPS22',
-        sigma = 2.0,
-        triangles = 5000,
-        transform = T.Compose([
-            preprocess_pipeline(),
-            augmentation_pipeline(),
-            ]))
 
-    train, val = split(data, 0.9)
-    loader = DataLoader(train, batch_size = 4, shuffle = True, drop_last = True)
+    transform = T.Compose([
+        preprocess_pipeline(),
+        augmentation_pipeline(),
+        ])
+
+    train = LeftAtriumHeatMapData(
+        root = 'data/GRIPS22/train', 
+        sigma = 2.0,
+        transform = transform)
+
+    val = LeftAtriumHeatMapData(
+        root = 'data/GRIPS22/val', 
+        sigma = 2.0,
+        transform = transform)
+
+    data = LightningDataset(
+        train_dataset = train,
+        val_dataset = val,
+        batch_size = 4,
+        shuffle = True,
+        drop_last = True,
+        num_workers = 4)
 
     model = HeatMapRegressor(
         base = GraphSAGE,
-        loss_func = AdaptiveWingLoss(),
+        # loss_func = AdaptiveWingLoss(),
+        loss_func = nn.MSELoss(),
+        optimizer = torch.optim.Adam,
         lr = 0.001,
         in_channels = 3,
         hidden_channels = 256,
@@ -74,30 +90,8 @@ if __name__ == '__main__':
         out_channels = 8,
         act = torch.relu)
 
-    model.train()
+    trainer = Trainer(
+        strategy = SingleDevicePlugin(),
+        max_epochs = 10)
 
-    # for epoch in range(10):
-    #     for batch in loader:
-    #         model.opt.zero_grad()
-
-    #         y_hat = model(batch)
-
-    #         loss = model.calculate_loss(y_hat, batch.y)
-    #         print(f'Train Loss: {loss}')
-
-    #         loss.backward()
-    #         model.opt.step()
-
-    model.eval()
-
-    for i in range(len(val)):
-        x = val[i]
-        pred_points = HeatMapRegressor.predict_points(model(x), x.x)
-        true_points = HeatMapRegressor.predict_points(x.y, x.x)
-        d = HeatMapRegressor.normalized_mean_error(pred_points, true_points)
-        print(d)
-
-    val.dataset.visualize_predicted_heat_map(3, model)
-    val.dataset.visualize_predicted_points(3, model)
-    # val.dataset.visualize_predicted_heat_map(10, model)
-    # val.dataset.visualize_predicted_heat_map(5, model)
+    trainer.fit(model, data)
