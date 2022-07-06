@@ -23,6 +23,8 @@ class HeatMapRegressor(LightningModule):
         self.lr = lr
         self.loss_func = loss_func
 
+        # self.save_hyperparameters()
+
     @staticmethod
     def predict_points(heatmap: torch.tensor, points: torch.tensor) -> torch.tensor:
         idx = heatmap.argmax(dim = 0) # get max value index for each landmark
@@ -62,12 +64,15 @@ class HeatMapRegressor(LightningModule):
 
     def validation_step(self, batch, batch_idx):
 
-        distance = 0.0
-        for i in range(batch.num_graphs):
-            data = batch.get_example(i)
-            distance += HeatMapRegressor.evaluate_heatmap(self(data), data)
+        with torch.no_grad():
+            distance = 0.0
+            for i in range(batch.num_graphs):
+                data = batch.get_example(i)
+                distance += HeatMapRegressor.evaluate_heatmap(self(data), data)
 
-        distance /= batch.num_graphs
+            distance /= batch.num_graphs
 
-        val_loss = self.landmark_loss(self(batch), batch.y)
+            val_loss = self.landmark_loss(self(batch), batch.y)
+            # self.log('performance', {'val_loss': val_loss, 'distance': distance})
+
         print(f'{batch_idx} -> Val loss: {val_loss}, Mean distance: {distance}')

@@ -7,7 +7,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import torch
 import torch.nn as nn
 import torch_geometric.transforms as T
-from torch_geometric.loader import DataLoader
 from torch_geometric.data import LightningDataset
 from torch_geometric.nn import GCN, GAT, GraphSAGE, GraphUNet
 from pytorch_lightning import Trainer
@@ -16,42 +15,8 @@ from pytorch_lightning.plugins import SingleDevicePlugin
 ## local source
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
+from automesh.loss import AdaptiveWingLoss
 from automesh.data.transforms import preprocess_pipeline, augmentation_pipeline
-
-## adapted from:
-# https://github.com/elliottzheng/AdaptiveWingLoss/blob/master/adaptive_wing_loss.py
-class AdaptiveWingLoss(nn.Module):
-    def __init__(
-        self, 
-        omega: float = 14.0,
-        theta: float = 0.5,
-        epsilon: float = 1.0,
-        alpha: float = 2.1) -> None:
-        super().__init__()
-
-        self.omega = omega
-        self.theta = theta
-        self.epsilon = epsilon
-        self.alpha = alpha
-    
-    def forward(self, y_hat, y) -> torch.tensor:
-        delta_y = (y - y_hat).abs()
-
-        delta_y1 = delta_y[delta_y < self.theta]
-        delta_y2 = delta_y[delta_y >= self.theta]
-
-        y1 = y[delta_y < self.theta]
-        y2 = y[delta_y >= self.theta]
-
-        loss1 = self.omega * torch.log(1 + torch.pow(delta_y1 / self.omega, self.alpha - y1))
-        
-        A = self.omega * (1 / (1 + torch.pow(self.theta / self.epsilon, self.alpha - y2))) * (self.alpha - y2) * (
-            torch.pow(self.theta / self.epsilon, self.alpha - y2 - 1)) * (1 / self.epsilon)
-
-        C = self.theta * A - self.omega * torch.log(1 + torch.pow(self.theta / self.epsilon, self.alpha - y2))
-        loss2 = A * delta_y2 - C
-
-        return (loss1.sum() + loss2.sum()) / (len(loss1) + len(loss2))
 
 if __name__ == '__main__':
 
@@ -76,14 +41,13 @@ if __name__ == '__main__':
         batch_size = 4,
         shuffle = True,
         drop_last = True,
-        num_workers = 4)
+        num_workers = 0)
 
     model = HeatMapRegressor(
         base = GraphSAGE,
-        # loss_func = AdaptiveWingLoss(),
         loss_func = nn.MSELoss(),
         optimizer = torch.optim.Adam,
-        lr = 0.001,
+        lr = 0.0005,
         in_channels = 3,
         hidden_channels = 256,
         num_layers = 4,
@@ -92,6 +56,8 @@ if __name__ == '__main__':
 
     trainer = Trainer(
         strategy = SingleDevicePlugin(),
-        max_epochs = 10)
+        max_epochs = 10,
+        # log_every_n_steps = 4
+        )
 
     trainer.fit(model, data)
