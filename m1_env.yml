@@ -1,0 +1,9 @@
+name: m1_automesh
+dependencies:
+  - python=3.8
+  - pytorch-nightly::pytorch
+  - pytorch-nightly::torchvision
+  - conda-forge::pytorch_geometric
+  - conda-forge::pytorch-lightning 
+  - anaconda::scipy
+  - open3d-admin::open3d
