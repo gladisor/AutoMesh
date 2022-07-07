@@ -16,14 +16,14 @@ class HeatMapRegressor(LightningModule):
             lr: float,
             loss_func: Callable,
             **kwargs) -> None:
-
         super().__init__()
+
         self.base = base(**kwargs)
         self.optimizer = optimizer
         self.lr = lr
         self.loss_func = loss_func
 
-        # self.save_hyperparameters()
+        self.save_hyperparameters()
 
     @staticmethod
     def predict_points(heatmap: torch.tensor, points: torch.tensor) -> torch.tensor:
