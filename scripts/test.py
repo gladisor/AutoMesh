@@ -17,6 +17,7 @@ from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
 from automesh.loss import AdaptiveWingLoss
 from automesh.data.transforms import preprocess_pipeline, augmentation_pipeline
+from pytorch_lightning.loggers import CSVLogger
 
 if __name__ == '__main__':
 
@@ -36,36 +37,35 @@ if __name__ == '__main__':
         sigma = 2.0,
         transform = transform)
 
+    batch_size = 4
 
-    val.display(3)
+    data = LightningDataset(
+        train_dataset = train,
+        val_dataset = val,
+        batch_size = batch_size,
+        drop_last = True,
+        num_workers = 4)
 
-    # data = LightningDataset(
-    #     train_dataset = train,
-    #     val_dataset = val,
-    #     batch_size = 4,
-    #     shuffle = True,
-    #     drop_last = True,
-    #     num_workers = 1)
+    model = HeatMapRegressor(
+        base = GAT,
+        loss_func = nn.MSELoss(),
+        optimizer = torch.optim.Adam,
+        lr = 0.0005,
+        in_channels = 3,
+        edge_dim = 3,
+        hidden_channels = 256,
+        num_layers = 4,
+        out_channels = 8,
+        act = torch.relu)
 
-    # model = HeatMapRegressor(
-    #     base = GAT,
-    #     loss_func = nn.MSELoss(),
-    #     optimizer = torch.optim.Adam,
-    #     lr = 0.0005,
-    #     in_channels = 3,
-    #     edge_dim = 3,
-    #     hidden_channels = 256,
-    #     num_layers = 4,
-    #     out_channels = 8,
-    #     act = torch.relu)
+    trainer = Trainer(
+        strategy = SingleDevicePlugin(),
+        max_epochs = 10,
+        logger = CSVLogger(save_dir = '', name = 'results'),
+        log_every_n_steps = int(len(train) / batch_size)
+        )
 
-    # trainer = Trainer(
-    #     strategy = SingleDevicePlugin(),
-    #     max_epochs = 10,
-    #     # log_every_n_steps = 4
-    #     )
+    trainer.fit(model, data)
 
-    # trainer.fit(model, data)
-
-    # for i in range(len(val)):
-    #     val.visualize_predicted_heat_map(i, model)
+    for i in range(len(val)):
+        val.visualize_predicted_heat_map(i, model)

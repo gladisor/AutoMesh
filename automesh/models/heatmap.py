@@ -60,7 +60,11 @@ class HeatMapRegressor(LightningModule):
 
     def training_step(self, batch: Batch, batch_idx) -> torch.tensor:
         ## compute landmark loss on each channel
-        return self.landmark_loss(self(batch), batch.y)
+        loss = self.landmark_loss(self(batch), batch.y)
+        self.log('train_loss', loss, batch_size = batch.num_graphs)
+        # , on_epoch = True, batch_size = batch.num_graphs)
+
+        return loss
 
     def validation_step(self, batch, batch_idx):
 
@@ -73,6 +77,5 @@ class HeatMapRegressor(LightningModule):
             distance /= batch.num_graphs
 
             val_loss = self.landmark_loss(self(batch), batch.y)
-            # self.log('performance', {'val_loss': val_loss, 'distance': distance})
-
-        print(f'{batch_idx} -> Val loss: {val_loss}, Mean distance: {distance}')
+        
+        self.log('val_performance', {'val_loss': val_loss, 'distance': distance}, batch_size = batch.num_graphs)
