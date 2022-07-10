@@ -1,4 +1,4 @@
-from typing import Callable, Union
+from typing import Callable, Union, Dict, Any
 
 import torch
 import torch.nn as nn
@@ -13,6 +13,8 @@ class HeatMapRegressor(LightningModule):
             self,
             base: BaseArchitecture,
             optimizer: Optimizer,
+            # opt: Optimizer,
+            # opt_kwargs: Dict[str, Any],
             lr: float,
             loss_func: Callable,
             **kwargs) -> None:
