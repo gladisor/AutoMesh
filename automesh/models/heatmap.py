@@ -16,14 +16,19 @@ class HeatMapRegressor(LightningModule):
             # opt: Optimizer,
             # opt_kwargs: Dict[str, Any],
             lr: float,
-            loss_func: Callable,
+            loss_func: nn.Module,
+            # loss_kwargs: Dict[str, Any],
             **kwargs) -> None:
         super().__init__()
 
         self.base = base(**kwargs)
         self.optimizer = optimizer
+        # self.opt = opt(**opt_kwargs)
+        # self.opt = opt
+        # self.opt_kwargs = opt_kwargs
         self.lr = lr
         self.loss_func = loss_func
+        # self.loss_func = loss_func(**loss_kwargs)
 
         self.save_hyperparameters()
 
