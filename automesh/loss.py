@@ -35,3 +35,72 @@ class AdaptiveWingLoss(nn.Module):
         loss2 = A * delta_y2 - C
 
         return (loss1.sum() + loss2.sum()) / (len(loss1) + len(loss2))
+
+class DiceLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
+        p = torch.sigmoid(y_hat)
+
+        intersection = p.dot(y)
+
+        dice = (2 * intersection + 1) / (p.sum() + y.sum() + 1)
+
+        return 1 - dice
+
+class BCEDiceLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
+        p = torch.sigmoid(y_hat)
+
+        intersection = p.dot(y)
+
+        dice = 1 - (2 * intersection + 1) / (p.sum() + y.sum() + 1)
+        bce = nn.functional.binary_cross_entropy(p, y)
+
+        return dice + bce
+
+class JaccardLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
+        p = torch.sigmoid(y_hat)
+        intersection = (p * y).sum()
+        total = (p + y).sum()
+        union = total - intersection
+        J = 1 - (intersection + 1) / (union + 1)
+
+        return J
+
+class FocalLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
+        p = torch.sigmoid(y_hat)
+        bce = nn.functional.binary_cross_entropy(p, y)
+        bce_exp = torch.exp(-bce)
+        focal = 0.8 * (1 - bce_exp) ** 2 * bce
+        return focal
+
+class TverskyLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
+        # p = torch.sigmoid(y_hat)
+        # p = y_hat
+
+        # #True Positives, False Positives & False Negatives
+        # TP = (p * y).sum()    
+        # FP = ((1-y) * p).sum()
+        # FN = (y * (1-p)).sum()
+       
+        # Tversky = (TP + 1) / (TP + 0.5*FP + 0.5*FN + 1)
+        
+        # return 1 - Tversky
+        return None

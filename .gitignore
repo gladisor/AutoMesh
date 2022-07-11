@@ -1,3 +1,6 @@
+wandb
+.DS_Store
+results/*
 .vscode
 AutoMesh.code-workspace
 lightning_logs

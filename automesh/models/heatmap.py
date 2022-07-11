@@ -1,4 +1,4 @@
-from typing import Callable, Union
+from typing import Callable, Union, Dict, Any
 
 import numpy as np
 import torch
@@ -14,17 +14,24 @@ class HeatMapRegressor(LightningModule):
             self,
             base: BaseArchitecture,
             optimizer: Optimizer,
+            # opt: Optimizer,
+            # opt_kwargs: Dict[str, Any],
             lr: float,
-            loss_func: Callable,
+            loss_func: nn.Module,
+            # loss_kwargs: Dict[str, Any],
             **kwargs) -> None:
-
         super().__init__()
+
         self.base = base(**kwargs)
         self.optimizer = optimizer
+        # self.opt = opt(**opt_kwargs)
+        # self.opt = opt
+        # self.opt_kwargs = opt_kwargs
         self.lr = lr
         self.loss_func = loss_func
+        # self.loss_func = loss_func(**loss_kwargs)
 
-        # self.save_hyperparameters()
+        self.save_hyperparameters()
 
     @staticmethod
     def predict_points(heatmap: torch.tensor, points: torch.tensor) -> torch.tensor:
@@ -89,7 +96,9 @@ class HeatMapRegressor(LightningModule):
 
     def training_step(self, batch: Batch, batch_idx) -> torch.tensor:
         ## compute landmark loss on each channel
-        return self.landmark_loss(self(batch), batch.y)
+        loss = self.landmark_loss(self(batch), batch.y)
+        self.log('train_loss', loss, batch_size = batch.num_graphs)
+        return loss
 
     def validation_step(self, batch, batch_idx):
 
@@ -102,6 +111,5 @@ class HeatMapRegressor(LightningModule):
             distance /= batch.num_graphs
 
             val_loss = self.landmark_loss(self(batch), batch.y)
-            # self.log('performance', {'val_loss': val_loss, 'distance': distance})
-
-        print(f'{batch_idx} -> Val loss: {val_loss}, Mean distance: {distance}')
+        
+        self.log('val_performance', {'val_loss': val_loss, 'distance': distance}, batch_size = batch.num_graphs)
