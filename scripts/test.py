@@ -8,20 +8,16 @@ import torch
 import torch.nn as nn
 import torch_geometric.transforms as T
 from torch_geometric.data import LightningDataset
-from torch_geometric.nn import (
-    GCN, GAT, GraphSAGE, GraphUNet, 
-    BatchNorm, InstanceNorm, GraphNorm, GraphSizeNorm)
+from torch_geometric.nn import GCN, GAT, GraphSAGE, GraphUNet, GCNConv, TopKPooling, SAGEConv, FeaStConv, ChebConv,EdgePooling, GraphConv, GATConv, SAGPooling
 from pytorch_lightning import Trainer
 from pytorch_lightning.plugins import SingleDevicePlugin
-from pytorch_lightning.loggers import CSVLogger
+
 
 ## local source
-from automesh.models.architectures import ParamGCN
+from automesh.models.architectures import ParamGCN, ParamGraphUNet
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
-from automesh.loss import (
-    AdaptiveWingLoss
-    )
+from automesh.loss import AdaptiveWingLoss
 from automesh.data.transforms import preprocess_pipeline, augmentation_pipeline
 
 if __name__ == '__main__':
@@ -29,6 +25,7 @@ if __name__ == '__main__':
     transform = T.Compose([
         preprocess_pipeline(),
         augmentation_pipeline(),
+        #T.Cartesian()
         ])
 
     train = LeftAtriumHeatMapData(
@@ -40,42 +37,40 @@ if __name__ == '__main__':
         root = 'data/GRIPS22/val', 
         sigma = 2.0,
         transform = transform)
-        
-    batch_size = 4
+
+
+    val.display(3)
+
     data = LightningDataset(
         train_dataset = train,
         val_dataset = val,
-        batch_size = batch_size,
+        batch_size = 4,
+        shuffle = True,
         drop_last = True,
-        num_workers = 2
-        )
+        num_workers = 1)
 
     model = HeatMapRegressor(
-        base = GraphSAGE,
-        loss_func = AdaptiveWingLoss,
-        loss_func_kwargs = {'omega': 15.0, 'epsilon': 3.0},
-        opt = torch.optim.Adam,
-        opt_kwargs = {'lr': 0.0005},
+        base = ParamGraphUNet,
+        convlayer=GCNConv,
+        poolinglayer=TopKPooling,
+        loss_func = AdaptiveWingLoss(),
+        optimizer = torch.optim.Adam,
+        lr = 0.0005,
         in_channels = 3,
-        hidden_channels = 128,
-        num_layers = 4,
+        #edge_dim = 3,
+        hidden_channels = 256,
+        #num_layers = 4,
+        depth= 5,
         out_channels = 8,
-        act = nn.GELU,
-        # act_kwargs = {},
-        norm = GraphNorm(128))
-
-    logger = CSVLogger(save_dir = 'results', name = 'GraphSage')
+        act = torch.relu)
 
     trainer = Trainer(
         strategy = SingleDevicePlugin(),
-        max_epochs = 20,
-        logger = logger,
-        log_every_n_steps = int(len(train) / batch_size)
+        max_epochs = 10,
+        # log_every_n_steps = 4
         )
-    
-    trainer.fit(model, data)
-    # model = HeatMapRegressor.load_from_checkpoint('results/GraphSage/version_12/checkpoints/epoch=19-step=320.ckpt')
 
-    # for i in range(len(val)):
-    #     val.visualize_predicted_heat_map(i, model)
-    #     val.visualize_predicted_points(i, model)
+    trainer.fit(model, data)
+
+    for i in range(len(val)):
+        val.visualize_predicted_heat_map(i, model)

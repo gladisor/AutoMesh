@@ -147,18 +147,12 @@ class LeftAtriumHeatMapData(LeftAtriumData):
         mesh.compute_vertex_normals()
         o3d.visualization.draw_geometries([mesh])
 
-    def visualize_predicted_heat_map(self, idx: int, model: HeatMapRegressor) -> None:
+    def visualize_predicted_heat_map(self, idx: int, model: nn.Module) -> None:
         x = self[idx]
-        hm = model(x).detach()
-
-        print(hm)
-        print(hm.max(dim = 0))
-        print(hm.min(dim = 0))
-
+        hm = model(x)
         color = np.zeros((hm.shape[0], 3))
-        H, _ = hm.max(dim = 1)
-
-        color[:, 0] = H.numpy()
+        hm_all, _ = hm.detach().max(dim = 1)
+        color[:, 0] = hm_all.numpy()
         color[:, 2] = 0.4
         ## function which renders the mesh and branching points of a particular data point
         mesh = copy.deepcopy(o3d.io.read_triangle_mesh(self.mesh_paths[idx]))
@@ -167,9 +161,9 @@ class LeftAtriumHeatMapData(LeftAtriumData):
         mesh.compute_vertex_normals()
         o3d.visualization.draw_geometries([mesh])
 
-    def visualize_predicted_points(self, idx: int, model: HeatMapRegressor) -> None:
+    def visualize_predicted_points(self, idx: int, model: nn.Module) -> None:
         x = self[idx]
-        hm = model(x).detach()
+        hm = model(x)
 
         mesh = copy.deepcopy(o3d.io.read_triangle_mesh(self.mesh_paths[idx]))
         points = HeatMapRegressor.predict_points(hm, x.x)
