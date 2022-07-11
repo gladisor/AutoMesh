@@ -25,7 +25,6 @@ if __name__ == '__main__':
     transform = T.Compose([
         preprocess_pipeline(),
         augmentation_pipeline(),
-
         ])
 
     train = LeftAtriumHeatMapData(
@@ -62,7 +61,7 @@ if __name__ == '__main__':
 
     logger = CSVLogger(save_dir = 'results', name = 'testing')
 
-    devices = 5
+    devices = 4
     num_batches = int(len(train) / batch_size) // devices
     print(f"Num Batches: {num_batches}")
 
@@ -70,7 +69,7 @@ if __name__ == '__main__':
         accelerator = 'cpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = devices,
-        max_epochs = 10,
+        max_epochs = 20,
         logger = logger,
         log_every_n_steps = num_batches,
         )
