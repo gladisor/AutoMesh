@@ -36,53 +36,59 @@ class AdaptiveWingLoss(nn.Module):
 
         return (loss1.sum() + loss2.sum()) / (len(loss1) + len(loss2))
 
+## Adapted from
+# https://www.kaggle.com/code/bigironsphere/loss-function-library-keras-pytorch/notebook
 class DiceLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, smooth):
         super().__init__()
+        self.smooth = smooth
 
     def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
         p = torch.sigmoid(y_hat)
 
-        intersection = p.dot(y)
+        intersection = (p * y).sum()
 
-        dice = (2 * intersection + 1) / (p.sum() + y.sum() + 1)
+        dice = (2.0 * intersection + self.smooth) / (p.sum() + y.sum() + self.smooth)
 
         return 1 - dice
 
-class BCEDiceLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
+class BCEDiceLoss(DiceLoss):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
         p = torch.sigmoid(y_hat)
 
-        intersection = p.dot(y)
+        intersection = (p * y).sum()
 
-        dice = 1 - (2 * intersection + 1) / (p.sum() + y.sum() + 1)
-        bce = nn.functional.binary_cross_entropy(p, y)
+        dice = 1 - (2.0 * intersection + self.smooth) / (p.sum() + y.sum() + self.smooth)
+        bce = nn.functional.binary_cross_entropy(p, y, reduction = 'mean')
 
         return dice + bce
 
-class JaccardLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
+class JaccardLoss(DiceLoss):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
         p = torch.sigmoid(y_hat)
         intersection = (p * y).sum()
         total = (p + y).sum()
         union = total - intersection
-        J = 1 - (intersection + 1) / (union + 1)
+        J = 1 - (intersection + self.smooth) / (union + self.smooth)
 
         return J
 
 class FocalLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, alpha, gamma):
         super().__init__()
+        self.alpha = alpha
+        self.gamma = gamma
 
     def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
         p = torch.sigmoid(y_hat)
-        bce = nn.functional.binary_cross_entropy(p, y)
+
+        bce = nn.functional.binary_cross_entropy(p, y, reduction = 'none')
         bce_exp = torch.exp(-bce)
-        focal = 0.8 * (1 - bce_exp) ** 2 * bce
-        return focal
+        focal = (self.alpha * (1 - bce_exp) ** self.gamma) * bce
+        return focal.mean()

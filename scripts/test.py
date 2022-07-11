@@ -17,7 +17,7 @@ from pytorch_lightning.loggers import CSVLogger
 from automesh.models.architectures import ParamGCN
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
-from automesh.loss import AdaptiveWingLoss, DiceLoss
+from automesh.loss import AdaptiveWingLoss, DiceLoss, BCEDiceLoss, JaccardLoss, FocalLoss
 from automesh.data.transforms import preprocess_pipeline, augmentation_pipeline
 
 if __name__ == '__main__':
@@ -37,19 +37,23 @@ if __name__ == '__main__':
         sigma = 2.0,
         transform = transform)
         
-    batch_size = 1
+    batch_size = 2
     data = LightningDataset(
         train_dataset = train,
         val_dataset = val,
         batch_size = batch_size,
-        drop_last = True,
+        # drop_last = True,
         num_workers = 1
         )
 
     model = HeatMapRegressor(
         base = GraphSAGE,
-        loss_func = AdaptiveWingLoss,
-        loss_func_kwargs = {'omega': 15.0, 'epsilon': 3.0},
+        # loss_func = AdaptiveWingLoss,
+        # loss_func_kwargs = {'omega': 15.0, 'epsilon': 3.0},
+        # loss_func = JaccardLoss,
+        # loss_func_kwargs = {'smooth': 1e-6},
+        loss_func = FocalLoss,
+        loss_func_kwargs = {'alpha': 0.8, 'gamma': 2.0},
         opt = torch.optim.Adam,
         opt_kwargs = {'lr': 0.0005},
         in_channels = 3,
@@ -59,14 +63,11 @@ if __name__ == '__main__':
         act = nn.GELU,
         norm = GraphNorm(128))
 
-    logger = CSVLogger(save_dir = 'results', name = 'testing')
+    logger = CSVLogger(save_dir = 'results', name = 'Loss')
 
     devices = 4
     num_batches = int(len(train) / batch_size) // devices
     print(f"Num Batches: {num_batches}")
-
-    ## guard to ensure proper ratio
-    assert (batch_size * devices) <= len(val)
 
     trainer = Trainer(
         accelerator = 'cpu',
@@ -78,7 +79,7 @@ if __name__ == '__main__':
         )
     
     trainer.fit(model, data)
-    # model = HeatMapRegressor.load_from_checkpoint('results/GraphSage/version_12/checkpoints/epoch=19-step=320.ckpt')
+    # model = HeatMapRegressor.load_from_checkpoint('results/testing/good/checkpoints/epoch=19-step=320.ckpt')
 
     # for i in range(len(val)):
     #     val.visualize_predicted_heat_map(i, model)
