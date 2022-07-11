@@ -4,7 +4,7 @@ import torch_geometric.transforms as T
 
 def preprocess_pipeline() -> Callable:
     return T.Compose([
-        T.FaceToEdge(remove_faces = False),
+        T.FaceToEdge(),
         T.Center(),
         T.NormalizeScale(),
     ])
