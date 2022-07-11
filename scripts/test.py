@@ -8,36 +8,24 @@ import torch
 import torch.nn as nn
 import torch_geometric.transforms as T
 from torch_geometric.data import LightningDataset
-from torch_geometric.nn import (
-    GCN, GAT, GraphSAGE, GraphUNet, 
-    BatchNorm, InstanceNorm, GraphNorm, GraphSizeNorm)
-from pytorch_lightning import Trainer, Callback
-from pytorch_lightning.plugins import SingleDevicePlugin, DDPSpawnPlugin
-# from pytorch_lightning.strategies.ddp_spawn import DDPSpawnStrategy
+from torch_geometric.nn import GraphSAGE, GraphNorm
+from pytorch_lightning import Trainer
+from pytorch_lightning.plugins import DDPSpawnPlugin
 from pytorch_lightning.loggers import CSVLogger
 
 ## local source
 from automesh.models.architectures import ParamGCN
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
-from automesh.loss import (
-    AdaptiveWingLoss, DiceLoss
-    )
+from automesh.loss import AdaptiveWingLoss, DiceLoss
 from automesh.data.transforms import preprocess_pipeline, augmentation_pipeline
-
-class ValEveryNSteps(Callback):
-    def __init__(self, every_n_step):
-        self.every_n_step = every_n_step
-
-    def on_batch_end(self, trainer, pl_module):
-        if trainer.global_step % self.every_n_step == 0 and trainer.global_step != 0:
-            trainer.validate()
 
 if __name__ == '__main__':
 
     transform = T.Compose([
         preprocess_pipeline(),
         augmentation_pipeline(),
+
         ])
 
     train = LeftAtriumHeatMapData(
@@ -46,7 +34,7 @@ if __name__ == '__main__':
         transform = transform)
 
     val = LeftAtriumHeatMapData(
-        root = 'data/GRIPS22/val', 
+        root = 'data/GRIPS22/val',
         sigma = 2.0,
         transform = transform)
         
