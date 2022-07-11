@@ -1,16 +1,11 @@
-from abc import abstractclassmethod
-from typing import Callable
+from torch_geometric.nn.models.basic_gnn import BasicGNN
+from torch_geometric.nn.conv import MessagePassing
 
-import torch.nn as nn
-
-class BaseArchitecture(nn.Module):
-    def __init__(self, **kwargs):
-        self.optimizer_args = kwargs
-
-    @abstractclassmethod
-    def optimizer_init(self):
-        """
-        Follow the pytorch lightning doccumentation to define optimizers for the archetecture.
-        https://pytorch-lightning.readthedocs.io/en/stable/starter/converting.html
-        """
-        return
+class ParamGCN(BasicGNN):
+    def __init__(self,convlayer: MessagePassing, **kwargs):
+        self.convlayer=convlayer
+        super().__init__(**kwargs)
+  
+    def init_conv(self, in_channels: int, out_channels: int,
+                  **kwargs) -> MessagePassing:
+        return self.convlayer(in_channels, out_channels, **kwargs)
