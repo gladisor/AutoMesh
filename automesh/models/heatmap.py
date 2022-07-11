@@ -93,4 +93,5 @@ class HeatMapRegressor(LightningModule):
         
         self.log(
             'val_performance', {'val_loss': val_loss, 'distance': distance}, 
-            batch_size = batch.num_graphs)
+            batch_size = batch.num_graphs
+            )

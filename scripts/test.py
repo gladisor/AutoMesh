@@ -65,6 +65,9 @@ if __name__ == '__main__':
     num_batches = int(len(train) / batch_size) // devices
     print(f"Num Batches: {num_batches}")
 
+    ## guard to ensure proper ratio
+    assert (batch_size * devices) <= len(val)
+
     trainer = Trainer(
         accelerator = 'cpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
