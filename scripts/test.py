@@ -15,9 +15,8 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.plugins import SingleDevicePlugin
 from pytorch_lightning.loggers import CSVLogger
 
-
 ## local source
-from automesh.models.architectures import Param_GCN
+from automesh.models.architectures import ParamGCN
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
 from automesh.loss import (
@@ -51,32 +50,32 @@ if __name__ == '__main__':
         num_workers = 2
         )
 
-    # model = HeatMapRegressor(
-    #     base = GraphSAGE,
-    #     loss_func = AdaptiveWingLoss(omega = 15.0, epsilon = 3.0),
-    #     optimizer = torch.optim.Adam,
-    #     lr = 0.001,
-    #     in_channels = 3,
-    #     # edge_dim = 3,
-    #     hidden_channels = 128,
-    #     num_layers = 4,
-    #     out_channels = 8,
-    #     act = nn.ReLU,
-    #     # act_kwargs = {},
-    #     norm = GraphNorm(128))
+    model = HeatMapRegressor(
+        base = GraphSAGE,
+        loss_func = AdaptiveWingLoss,
+        loss_func_kwargs = {'omega': 15.0, 'epsilon': 3.0},
+        opt = torch.optim.Adam,
+        opt_kwargs = {'lr': 0.0005},
+        in_channels = 3,
+        hidden_channels = 128,
+        num_layers = 4,
+        out_channels = 8,
+        act = nn.GELU,
+        # act_kwargs = {},
+        norm = GraphNorm(128))
 
-    # logger = CSVLogger(save_dir = 'results', name = 'GraphSage')
+    logger = CSVLogger(save_dir = 'results', name = 'GraphSage')
 
-    # trainer = Trainer(
-    #     strategy = SingleDevicePlugin(),
-    #     max_epochs = 10,
-    #     logger = logger,
-    #     log_every_n_steps = int(len(train) / batch_size)
-    #     )
+    trainer = Trainer(
+        strategy = SingleDevicePlugin(),
+        max_epochs = 20,
+        logger = logger,
+        log_every_n_steps = int(len(train) / batch_size)
+        )
     
     trainer.fit(model, data)
-    model = HeatMapRegressor.load_from_checkpoint('results/GraphSage/version_4/checkpoints/epoch=9-step=160.ckpt')
+    # model = HeatMapRegressor.load_from_checkpoint('results/GraphSage/version_12/checkpoints/epoch=19-step=320.ckpt')
 
-    for i in range(len(val)):
-        val.visualize_predicted_heat_map(i, model)
-        val.visualize_predicted_points(i, model)
+    # for i in range(len(val)):
+    #     val.visualize_predicted_heat_map(i, model)
+    #     val.visualize_predicted_points(i, model)

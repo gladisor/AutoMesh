@@ -7,29 +7,21 @@ from torch.optim import Optimizer
 from torch_geometric.data import Data, Batch
 from pytorch_lightning import LightningModule
 
-from automesh.models.architectures import BaseArchitecture
-
 class HeatMapRegressor(LightningModule):
     def __init__(
             self,
-            base: BaseArchitecture,
-            optimizer: Optimizer,
-            # opt: Optimizer,
-            # opt_kwargs: Dict[str, Any],
-            lr: float,
+            base: nn.Module,
+            opt: Optimizer,
+            opt_kwargs: Dict[str, Any],
             loss_func: nn.Module,
-            # loss_kwargs: Dict[str, Any],
+            loss_func_kwargs: Dict[str, Any],
             **kwargs) -> None:
         super().__init__()
 
         self.base = base(**kwargs)
-        self.optimizer = optimizer
-        # self.opt = opt(**opt_kwargs)
-        # self.opt = opt
-        # self.opt_kwargs = opt_kwargs
-        self.lr = lr
-        self.loss_func = loss_func
-        # self.loss_func = loss_func(**loss_kwargs)
+        self.opt = opt
+        self.opt_kwargs = opt_kwargs
+        self.loss_func = loss_func(**loss_func_kwargs)
 
         self.save_hyperparameters()
 
@@ -38,34 +30,6 @@ class HeatMapRegressor(LightningModule):
         idx = heatmap.argmax(dim = 0) # get max value index for each landmark
         return points[idx, :] # extract the coordinates
 
-
-    #not yet finalized verify that index comes out correctly
-    #get highest neighborhood average. center vertex is considered to be branch point
-    @staticmethod
-    def predict_smoothed_points(heatmap: torch.tensor, data: Data) -> torch.tensor:
-         # get max value index for each landmark
-        avg=torch.zeros(heatmap.shape)
-        for j in range(avg.size(1)):
-            for i in range(avg.size(0)):
-                neighborhood=[]
-                neighborhood.append(heatmap[i,j])
-                data.edge_index
-                for x in range(data.edge_index.size(1)):
-                    if data.edge_index[0][x]==i:
-                        neighbornode=data.edge_index[1][x]
-                        neighborhood.append(heatmap[neighbornode.item()][j])
-                avg[i][j]=sum(neighborhood)/len(neighborhood) 
-        idx = avg.argmax(dim = 0)
-        
-        print ("idx: ------------ ", idx)  ###check steps here
-        
-        return data.x[idx, :]# extract the coordinates
-    
-    @staticmethod 
-    def predict_confidence():
-        pass 
-    
-    
     @staticmethod
     def normalized_mean_error(pred_points: torch.tensor, true_points: torch.tensor) -> torch.tensor:
         return (true_points - pred_points).norm(dim = 1).mean()
@@ -83,8 +47,10 @@ class HeatMapRegressor(LightningModule):
             return self.base(x.pos, x.edge_index)
     
     def configure_optimizers(self):
-        opt = self.optimizer(self.base.parameters(), self.lr)
-        return opt
+        # opt = self.optimizer(self.base.parameters(), self.lr)
+        return self.opt(self.base.parameters(), **self.opt_kwargs)
+
+        # return opt
 
     def landmark_loss(self, y_hat, y) -> torch.tensor:
         ## compute landmark loss on each channel
