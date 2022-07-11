@@ -14,10 +14,10 @@ from pytorch_lightning.plugins import DDPSpawnPlugin
 from pytorch_lightning.loggers import CSVLogger
 
 ## local source
-from automesh.models.architectures import ParamGCN
+from automesh.models.architectures import ParamGCN, ParamGraphUNet
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
-from automesh.loss import AdaptiveWingLoss, DiceLoss
+from automesh.loss import AdaptiveWingLoss
 from automesh.data.transforms import preprocess_pipeline, augmentation_pipeline
 
 if __name__ == '__main__':
@@ -36,25 +36,30 @@ if __name__ == '__main__':
         root = 'data/GRIPS22/val',
         sigma = 2.0,
         transform = transform)
-        
+
     batch_size = 1
     data = LightningDataset(
         train_dataset = train,
         val_dataset = val,
-        batch_size = batch_size,
+        batch_size = 4,
+        shuffle = True,
         drop_last = True,
         num_workers = 1
         )
 
+
     model = HeatMapRegressor(
-        base = GraphSAGE,
-        loss_func = AdaptiveWingLoss,
-        loss_func_kwargs = {'omega': 15.0, 'epsilon': 3.0},
-        opt = torch.optim.Adam,
-        opt_kwargs = {'lr': 0.0005},
+        base = ParamGraphUNet,
+        convlayer=GCNConv,
+        poolinglayer=TopKPooling,
+        loss_func = AdaptiveWingLoss(),
+        optimizer = torch.optim.Adam,
+        lr = 0.0005,
         in_channels = 3,
-        hidden_channels = 128,
-        num_layers = 4,
+        #edge_dim = 3,
+        hidden_channels = 256,
+        #num_layers = 4,
+        depth= 5,
         out_channels = 8,
         act = nn.GELU,
         norm = GraphNorm(128))
@@ -73,10 +78,8 @@ if __name__ == '__main__':
         logger = logger,
         log_every_n_steps = num_batches,
         )
-    
-    trainer.fit(model, data)
-    # model = HeatMapRegressor.load_from_checkpoint('results/GraphSage/version_12/checkpoints/epoch=19-step=320.ckpt')
 
-    # for i in range(len(val)):
-    #     val.visualize_predicted_heat_map(i, model)
-    #     val.visualize_predicted_points(i, model)
+    trainer.fit(model, data)
+
+    for i in range(len(val)):
+        val.visualize_predicted_heat_map(i, model)

@@ -34,55 +34,6 @@ class AdaptiveWingLoss(nn.Module):
         C = self.theta * A - self.omega * torch.log(1 + torch.pow(self.theta / self.epsilon, self.alpha - y2))
         loss2 = A * delta_y2 - C
 
+
         return (loss1.sum() + loss2.sum()) / (len(loss1) + len(loss2))
 
-class DiceLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
-        p = torch.sigmoid(y_hat)
-
-        intersection = p.dot(y)
-
-        dice = (2 * intersection + 1) / (p.sum() + y.sum() + 1)
-
-        return 1 - dice
-
-class BCEDiceLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
-        p = torch.sigmoid(y_hat)
-
-        intersection = p.dot(y)
-
-        dice = 1 - (2 * intersection + 1) / (p.sum() + y.sum() + 1)
-        bce = nn.functional.binary_cross_entropy(p, y)
-
-        return dice + bce
-
-class JaccardLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
-        p = torch.sigmoid(y_hat)
-        intersection = (p * y).sum()
-        total = (p + y).sum()
-        union = total - intersection
-        J = 1 - (intersection + 1) / (union + 1)
-
-        return J
-
-class FocalLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
-        p = torch.sigmoid(y_hat)
-        bce = nn.functional.binary_cross_entropy(p, y)
-        bce_exp = torch.exp(-bce)
-        focal = 0.8 * (1 - bce_exp) ** 2 * bce
-        return focal
