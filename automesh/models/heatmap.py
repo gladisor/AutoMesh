@@ -39,6 +39,19 @@ class HeatMapRegressor(LightningModule):
         pred_points = HeatMapRegressor.predict_points(heatmap, data.x)
         true_points = HeatMapRegressor.predict_points(data.y, data.x)
         return HeatMapRegressor.normalized_mean_error(pred_points, true_points)
+
+    # def evaluate_model(self, batch: Batch, batch_idx: int):
+    #     with torch.no_grad():
+    #         distance = 0.0
+            
+    #         # evaluate each graph in batch seperately
+    #         for i in range(batch.num_graphs):
+    #             data = batch.get_example(i)
+    #             distance += HeatMapRegressor.evaluate_heatmap(self(data), data)
+
+    #         distance /= batch.num_graphs
+
+    #         val_loss = self.landmark_loss(self(batch), batch.y)
     
     def forward(self, x: Union[Data, Batch]) -> torch.tensor:
         if x.edge_attr != None:
@@ -49,8 +62,6 @@ class HeatMapRegressor(LightningModule):
     def configure_optimizers(self):
         # opt = self.optimizer(self.base.parameters(), self.lr)
         return self.opt(self.base.parameters(), **self.opt_kwargs)
-
-        # return opt
 
     def landmark_loss(self, y_hat, y) -> torch.tensor:
         ## compute landmark loss on each channel
@@ -63,11 +74,13 @@ class HeatMapRegressor(LightningModule):
     def training_step(self, batch: Batch, batch_idx) -> torch.tensor:
         ## compute landmark loss on each channel
         loss = self.landmark_loss(self(batch), batch.y)
-        self.log('train_loss', loss, batch_size = batch.num_graphs)
+        self.log(
+            'train_loss', loss, 
+            batch_size = batch.num_graphs, 
+            )
         return loss
 
     def validation_step(self, batch, batch_idx):
-
         with torch.no_grad():
             distance = 0.0
             for i in range(batch.num_graphs):
@@ -78,4 +91,7 @@ class HeatMapRegressor(LightningModule):
 
             val_loss = self.landmark_loss(self(batch), batch.y)
         
-        self.log('val_performance', {'val_loss': val_loss, 'distance': distance}, batch_size = batch.num_graphs)
+        self.log(
+            'val_performance', {'val_loss': val_loss, 'distance': distance}, 
+            batch_size = batch.num_graphs, 
+            )
