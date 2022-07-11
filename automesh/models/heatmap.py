@@ -1,5 +1,6 @@
 from typing import Callable, Union
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.optim import Optimizer
@@ -29,6 +30,34 @@ class HeatMapRegressor(LightningModule):
     def predict_points(heatmap: torch.tensor, points: torch.tensor) -> torch.tensor:
         idx = heatmap.argmax(dim = 0) # get max value index for each landmark
         return points[idx, :] # extract the coordinates
+
+
+    #not yet finalized verify that index comes out correctly
+    #get highest neighborhood average. center vertex is considered to be branch point
+    @staticmethod
+    def predict_smoothed_points(heatmap: torch.tensor, data: Data) -> torch.tensor:
+         # get max value index for each landmark
+        avg=torch.zeros(heatmap.shape)
+        for j in range(avg.size(1)):
+            for i in range(avg.size(0)):
+                neighborhood=[]
+                neighborhood.append(heatmap[i,j])
+                data.edge_index
+                for x in range(data.edge_index.size(1)):
+                    if data.edge_index[0][x]==i:
+                        neighbornode=data.edge_index[1][x]
+                        neighborhood.append(heatmap[neighbornode.item()][j])
+                avg[i][j]=sum(neighborhood)/len(neighborhood) 
+        idx = avg.argmax(dim = 0)
+        
+        print ("idx: ------------ ", idx)  ###check steps here
+        
+        return data.x[idx, :]# extract the coordinates
+    
+    @staticmethod 
+    def predict_confidence():
+        pass 
+    
     
     @staticmethod
     def normalized_mean_error(pred_points: torch.tensor, true_points: torch.tensor) -> torch.tensor:
