@@ -86,21 +86,3 @@ class FocalLoss(nn.Module):
         bce_exp = torch.exp(-bce)
         focal = 0.8 * (1 - bce_exp) ** 2 * bce
         return focal
-
-class TverskyLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
-        # p = torch.sigmoid(y_hat)
-        # p = y_hat
-
-        # #True Positives, False Positives & False Negatives
-        # TP = (p * y).sum()    
-        # FP = ((1-y) * p).sum()
-        # FN = (y * (1-p)).sum()
-       
-        # Tversky = (TP + 1) / (TP + 0.5*FP + 0.5*FN + 1)
-        
-        # return 1 - Tversky
-        return None
