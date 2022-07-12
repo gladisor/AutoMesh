@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import torch_geometric.transforms as T
 from torch_geometric.data import LightningDataset
-from torch_geometric.nn import GraphSAGE, GraphNorm
+from torch_geometric.nn import GraphSAGE, GraphNorm, GCNConv, SAGEConv
 from pytorch_lightning import Trainer
 from pytorch_lightning.plugins import DDPSpawnPlugin
 from pytorch_lightning.loggers import CSVLogger
@@ -35,18 +35,22 @@ if __name__ == '__main__':
         num_workers = 1)
 
     model = HeatMapRegressor(
-        base = GraphSAGE,
+        base = ParamGCN,
+        base_kwargs = {
+            'convlayer': SAGEConv,
+            'in_channels': 3,
+            'hidden_channels': 128,
+            'num_layers': 4,
+            'out_channels': 8,
+            # 'act': nn.GELU,
+            'act': nn.LeakyReLU,
+            'act_kwargs': {'negative_slope': 0.01},
+            'norm': GraphNorm(128)},
         loss_func = FocalLoss,
         opt = torch.optim.Adam,
-        opt_kwargs = {'lr': 0.0005},
-        in_channels = 3,
-        hidden_channels = 128,
-        num_layers = 4,
-        out_channels = 8,
-        act = nn.GELU,
-        norm = GraphNorm(128))
-
-    logger = CSVLogger(save_dir = 'results', name = 'Loss')
+        opt_kwargs = {'lr': 0.0005})
+        
+    logger = CSVLogger(save_dir = 'results', name = 'testing')
 
     devices = 4
     num_batches = int(len(train) / batch_size) // devices

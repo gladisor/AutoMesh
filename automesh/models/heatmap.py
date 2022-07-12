@@ -16,6 +16,7 @@ class HeatMapRegressor(LightningModule):
     def __init__(
             self,
             base: nn.Module,
+            base_kwargs: Dict[str, Any],
             opt: Optimizer,
             opt_kwargs: Dict[str, Any],
             loss_func: nn.Module,
@@ -24,7 +25,8 @@ class HeatMapRegressor(LightningModule):
         super().__init__()
 
         ## constructing graph neural network
-        self.base = base(**kwargs)
+        self.base = base(**base_kwargs)
+        # self.base = base(**kwargs)
         self.opt = opt
         self.opt_kwargs = opt_kwargs
         self.loss_func = loss_func(**loss_func_kwargs)
