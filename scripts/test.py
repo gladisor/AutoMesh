@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import torch_geometric.transforms as T
 from torch_geometric.data import LightningDataset
-from torch_geometric.nn import GraphSAGE, GraphNorm, GCNConv, SAGEConv
+from torch_geometric.nn import GraphSAGE, GraphNorm, GCNConv, SAGEConv, GATConv
 from pytorch_lightning import Trainer
 from pytorch_lightning.plugins import DDPSpawnPlugin
 from pytorch_lightning.loggers import CSVLogger
@@ -23,7 +23,12 @@ from automesh.loss import (
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 
 if __name__ == '__main__':
-    transform = T.Compose([preprocess_pipeline(), rotation_pipeline()])
+    transform = T.Compose([
+        preprocess_pipeline(), 
+        rotation_pipeline(),
+        # T.Cartesian()
+        ])
+
     train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
     val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
 
@@ -34,6 +39,31 @@ if __name__ == '__main__':
         batch_size = batch_size,
         num_workers = 1)
 
+    # import yaml
+    
+    # config = {
+    #     'base': ParamGCN,
+    #     'base_kwargs': {
+    #         'convlayer': SAGEConv,
+    #         'in_channels': 3,
+    #         'hidden_channels': 128,
+    #         'num_layers': 4,
+    #         'out_channels': 8,
+    #         'act': nn.LeakyReLU,
+    #         'act_kwargs': {'negative_slope': 0.01},
+    #         'norm': GraphNorm
+    #         },
+    #     'loss_func': FocalLoss,
+    #     'loss_func_kwargs': {},
+    #     'opt': torch.optim.Adam,
+    #     'opt_kwargs': {'lr': 0.0005}}
+
+    # with open('config.yml', 'w') as stream:
+    #     yaml.dump(config, stream)
+
+    # with open('config.yml', 'r') as stream:
+    #     print(yaml.full_load(stream))
+
     model = HeatMapRegressor(
         base = ParamGCN,
         base_kwargs = {
@@ -42,8 +72,8 @@ if __name__ == '__main__':
             'hidden_channels': 128,
             'num_layers': 4,
             'out_channels': 8,
-            'act': nn.LeakyReLU,
-            'act_kwargs': {'negative_slope': 0.01},
+            'act': nn.GELU,
+            # 'act_kwargs': {'negative_slope': 0.01},
             'norm': GraphNorm(128)},
         loss_func = FocalLoss,
         loss_func_kwargs = {},
@@ -55,20 +85,20 @@ if __name__ == '__main__':
     devices = 4
     num_batches = int(len(train) / batch_size) // devices
 
-    trainer = Trainer(
-        accelerator = 'cpu',
-        strategy = DDPSpawnPlugin(find_unused_parameters = False),
-        devices = devices,
-        max_epochs = 20,
-        logger = logger,
-        log_every_n_steps = num_batches,
-        )
+    # trainer = Trainer(
+    #     accelerator = 'cpu',
+    #     strategy = DDPSpawnPlugin(find_unused_parameters = False),
+    #     devices = devices,
+    #     max_epochs = 20,
+    #     logger = logger,
+    #     log_every_n_steps = num_batches,
+    #     )
     
-    trainer.fit(model, data)
+    # trainer.fit(model, data)
 
-    # model = HeatMapRegressor.load_from_checkpoint('results/Loss/FocalLoss/checkpoints/epoch=19-step=320.ckpt')
+    model = HeatMapRegressor.load_from_checkpoint('results/testing/version_6/checkpoints/epoch=19-step=320.ckpt')
 
-    # for i in range(len(val)):
-    #     val.visualize_predicted_heat_map(i, model)
-    #     val.visualize_predicted_points(i, model)
-    #     val.display(i)
+    for i in range(len(val)):
+        val.visualize_predicted_heat_map(i, model)
+        val.visualize_predicted_points(i, model)
+        val.display(i)
