@@ -23,7 +23,6 @@ from automesh.loss import (
 from automesh.data.transforms import preprocess_pipeline, augmentation_pipeline
 
 if __name__ == '__main__':
-
     transform = T.Compose([preprocess_pipeline(), augmentation_pipeline()])
     train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
     val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
