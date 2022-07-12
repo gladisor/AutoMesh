@@ -39,6 +39,7 @@ class HeatMapRegressor(LightningModule):
         return points[idx, :] # extract the coordinates
 
     def forward(self, x: Union[Data, Batch]) -> torch.tensor:
+        ## use edge attributes in forward pass if they exist
         if x.edge_attr != None:
             return self.base(x.pos, x.edge_index, x.edge_attr)
         else:
