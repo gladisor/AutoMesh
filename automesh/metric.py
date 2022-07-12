@@ -3,6 +3,8 @@ import torch
 
 
 class NormalizedMeanError(Metric):
+    full_state_update = False
+
     def __init__(self):
         super().__init__()
         self.add_state('distance', default = torch.tensor(0.0), dist_reduce_fx = 'sum')

@@ -17,43 +17,27 @@ from pytorch_lightning.loggers import CSVLogger
 from automesh.models.architectures import ParamGCN
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
-from automesh.loss import AdaptiveWingLoss, DiceLoss, BCEDiceLoss, JaccardLoss, FocalLoss
+from automesh.loss import (
+    AdaptiveWingLoss, DiceLoss, BCEDiceLoss, 
+    JaccardLoss, FocalLoss, TverskyLoss, FocalTverskyLoss)
 from automesh.data.transforms import preprocess_pipeline, augmentation_pipeline
 
 if __name__ == '__main__':
 
-    transform = T.Compose([
-        preprocess_pipeline(),
-        augmentation_pipeline(),
-        ])
+    transform = T.Compose([preprocess_pipeline(), augmentation_pipeline()])
+    train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
+    val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
 
-    train = LeftAtriumHeatMapData(
-        root = 'data/GRIPS22/train', 
-        sigma = 2.0,
-        transform = transform)
-
-    val = LeftAtriumHeatMapData(
-        root = 'data/GRIPS22/val',
-        sigma = 2.0,
-        transform = transform)
-        
-    batch_size = 2
+    batch_size = 1
     data = LightningDataset(
         train_dataset = train,
         val_dataset = val,
         batch_size = batch_size,
-        # drop_last = True,
-        num_workers = 1
-        )
+        num_workers = 1)
 
     model = HeatMapRegressor(
         base = GraphSAGE,
-        # loss_func = AdaptiveWingLoss,
-        # loss_func_kwargs = {'omega': 15.0, 'epsilon': 3.0},
-        # loss_func = JaccardLoss,
-        # loss_func_kwargs = {'smooth': 1e-6},
         loss_func = FocalLoss,
-        loss_func_kwargs = {'alpha': 0.8, 'gamma': 2.0},
         opt = torch.optim.Adam,
         opt_kwargs = {'lr': 0.0005},
         in_channels = 3,
@@ -67,7 +51,6 @@ if __name__ == '__main__':
 
     devices = 4
     num_batches = int(len(train) / batch_size) // devices
-    print(f"Num Batches: {num_batches}")
 
     trainer = Trainer(
         accelerator = 'cpu',
@@ -79,8 +62,10 @@ if __name__ == '__main__':
         )
     
     trainer.fit(model, data)
-    # model = HeatMapRegressor.load_from_checkpoint('results/testing/good/checkpoints/epoch=19-step=320.ckpt')
+
+    # model = HeatMapRegressor.load_from_checkpoint('results/Loss/FocalLoss/checkpoints/epoch=19-step=320.ckpt')
 
     # for i in range(len(val)):
     #     val.visualize_predicted_heat_map(i, model)
     #     val.visualize_predicted_points(i, model)
+    #     val.display(i)

@@ -1,4 +1,4 @@
-from typing import Callable, Union, Dict, Any
+from typing import Callable, Union, Dict, Any, Optional
 
 import numpy as np
 import torch
@@ -19,7 +19,7 @@ class HeatMapRegressor(LightningModule):
             opt: Optimizer,
             opt_kwargs: Dict[str, Any],
             loss_func: nn.Module,
-            loss_func_kwargs: Dict[str, Any],
+            loss_func_kwargs: Optional[Dict[str, Any]] = {},
             **kwargs) -> None:
         super().__init__()
 
@@ -31,7 +31,7 @@ class HeatMapRegressor(LightningModule):
         self.nme = NormalizedMeanError()
 
         ## saving state
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore = ['norm'])
 
     @staticmethod
     def predict_points(heatmap: torch.tensor, points: torch.tensor) -> torch.tensor:
