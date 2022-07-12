@@ -20,10 +20,10 @@ from automesh.models.heatmap import HeatMapRegressor
 from automesh.loss import (
     AdaptiveWingLoss, DiceLoss, BCEDiceLoss, 
     JaccardLoss, FocalLoss, TverskyLoss, FocalTverskyLoss)
-from automesh.data.transforms import preprocess_pipeline, augmentation_pipeline
+from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 
 if __name__ == '__main__':
-    transform = T.Compose([preprocess_pipeline(), augmentation_pipeline()])
+    transform = T.Compose([preprocess_pipeline(), rotation_pipeline()])
     train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
     val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
 
@@ -42,14 +42,14 @@ if __name__ == '__main__':
             'hidden_channels': 128,
             'num_layers': 4,
             'out_channels': 8,
-            # 'act': nn.GELU,
             'act': nn.LeakyReLU,
             'act_kwargs': {'negative_slope': 0.01},
             'norm': GraphNorm(128)},
         loss_func = FocalLoss,
+        loss_func_kwargs = {},
         opt = torch.optim.Adam,
         opt_kwargs = {'lr': 0.0005})
-        
+
     logger = CSVLogger(save_dir = 'results', name = 'testing')
 
     devices = 4
