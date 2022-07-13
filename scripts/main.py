@@ -41,7 +41,11 @@ if __name__ == '__main__':
     model = HeatMapRegressor(
         base = ParamGCN,
         base_kwargs = {
-            'convlayer': SAGEConv,
+            'conv_layer': SAGEConv,
+            # 'conv_layer': FeastConv,
+            # 'conv_kwargs': {},
+            # 'pool_layer': TopKPooling
+            # 'pool_kwargs: {'ratio': 0.5},
             'in_channels': 3,
             'hidden_channels': 128,
             'num_layers': 4,
@@ -52,15 +56,16 @@ if __name__ == '__main__':
         loss_func = FocalLoss,
         loss_func_kwargs = {},
         opt = torch.optim.Adam,
-        opt_kwargs = {'lr': 0.0005})
+        opt_kwargs = {'lr': 0.0005}
+        )
 
     logger = CSVLogger(save_dir = 'results', name = 'testing')
 
-    devices = 20
+    devices = 4
     num_batches = int(len(train) / batch_size) // devices
 
     trainer = Trainer(
-        accelerator = 'cpu',
+        accelerator = 'gpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = devices,
         max_epochs = 2,
@@ -69,6 +74,7 @@ if __name__ == '__main__':
         )
     
     trainer.fit(model, data)
+    
     # model = HeatMapRegressor.load_from_checkpoint('results/testing/version_6/checkpoints/epoch=19-step=320.ckpt')
 
     # for i in range(len(val)):

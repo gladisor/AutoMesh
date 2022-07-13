@@ -34,14 +34,6 @@ class HeatMapRegressor(LightningModule):
         ## saving state
         self.save_hyperparameters(ignore = ['norm'])
 
-    # @staticmethod
-    # def load_from_config(path: str):
-    #     with open('config.yml', 'r') as stream:
-    #         config = yaml.full_load(stream)
-
-        
-    #     return
-
     @staticmethod
     def predict_points(heatmap: torch.tensor, points: torch.tensor) -> torch.tensor:
         idx = heatmap.argmax(dim = 0) # get max value index for each landmark
