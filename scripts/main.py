@@ -36,7 +36,7 @@ if __name__ == '__main__':
         train_dataset = train,
         val_dataset = val,
         batch_size = batch_size,
-        num_workers = 1)
+        num_workers = 4)
 
     model = HeatMapRegressor(
         base = ParamGCN,
