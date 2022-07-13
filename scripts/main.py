@@ -43,32 +43,32 @@ if __name__ == '__main__':
         base_kwargs = {
             'conv_layer': SAGEConv,
             # 'conv_layer': FeastConv,
-            # 'conv_kwargs': {},
+            'conv_kwargs': {},
             # 'pool_layer': TopKPooling
             # 'pool_kwargs: {'ratio': 0.5},
             'in_channels': 3,
-            'hidden_channels': 128,
-            'num_layers': 4,
+            'hidden_channels': 512,
+            'num_layers': 5,
             'out_channels': 8,
             'act': nn.GELU,
             # 'act_kwargs': {'negative_slope': 0.01},
-            'norm': GraphNorm(128)},
+            'norm': GraphNorm(512)},
         loss_func = FocalLoss,
         loss_func_kwargs = {},
         opt = torch.optim.Adam,
-        opt_kwargs = {'lr': 0.0005}
+        opt_kwargs = {'lr': 0.0001}
         )
 
     logger = CSVLogger(save_dir = 'results', name = 'testing')
 
-    devices = 4
+    devices = 2
     num_batches = int(len(train) / batch_size) // devices
 
     trainer = Trainer(
         accelerator = 'gpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = devices,
-        max_epochs = 2,
+        max_epochs = 150,
         logger = logger,
         log_every_n_steps = num_batches,
         )
