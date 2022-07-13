@@ -9,9 +9,9 @@ def preprocess_pipeline() -> Callable:
         T.NormalizeScale(),
     ])
     
-def augmentation_pipeline() -> Callable:
+def rotation_pipeline(degrees: float = 20) -> Callable:
     return T.Compose([
-        T.RandomRotate(20, axis = 0),
-        T.RandomRotate(20, axis = 1),
-        T.RandomRotate(20, axis = 2),
+        T.RandomRotate(degrees, axis = 0),
+        T.RandomRotate(degrees, axis = 1),
+        T.RandomRotate(degrees, axis = 2),
     ])

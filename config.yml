@@ -1,0 +1,16 @@
+base: !!python/name:automesh.models.architectures.ParamGCN ''
+base_kwargs:
+  act: !!python/name:torch.nn.modules.activation.LeakyReLU ''
+  act_kwargs:
+    negative_slope: 0.01
+  convlayer: !!python/name:torch_geometric.nn.conv.sage_conv.SAGEConv ''
+  hidden_channels: 128
+  in_channels: 3
+  norm: !!python/name:torch_geometric.nn.norm.graph_norm.GraphNorm ''
+  num_layers: 4
+  out_channels: 8
+loss_func: !!python/name:automesh.loss.FocalLoss ''
+loss_func_kwargs: {}
+opt: !!python/name:torch.optim.adam.Adam ''
+opt_kwargs:
+  lr: 0.0005

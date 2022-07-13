@@ -1,4 +1,5 @@
 import torch
+from torch import Tensor
 import torch.nn as nn
 
 ## adapted from:
@@ -17,7 +18,7 @@ class AdaptiveWingLoss(nn.Module):
         self.epsilon = epsilon
         self.alpha = alpha
     
-    def forward(self, y_hat, y) -> torch.tensor:
+    def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
         delta_y = (y - y_hat).abs()
 
         delta_y1 = delta_y[delta_y < self.theta]
@@ -36,71 +37,92 @@ class AdaptiveWingLoss(nn.Module):
 
         return (loss1.sum() + loss2.sum()) / (len(loss1) + len(loss2))
 
+## Adapted from
+# https://www.kaggle.com/code/bigironsphere/loss-function-library-keras-pytorch/notebook
 class DiceLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, smooth: float = 1e-6):
         super().__init__()
+        self.smooth = smooth
 
-    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
+    def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
         p = torch.sigmoid(y_hat)
 
-        intersection = p.dot(y)
-
-        dice = (2 * intersection + 1) / (p.sum() + y.sum() + 1)
-
+        intersection = (p * y).sum()
+        dice = (2.0 * intersection + self.smooth) / (p.sum() + y.sum() + self.smooth)
         return 1 - dice
 
-class BCEDiceLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
+class BCEDiceLoss(DiceLoss):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
+    def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
         p = torch.sigmoid(y_hat)
 
-        intersection = p.dot(y)
-
-        dice = 1 - (2 * intersection + 1) / (p.sum() + y.sum() + 1)
-        bce = nn.functional.binary_cross_entropy(p, y)
+        intersection = (p * y).sum()
+        dice = 1 - (2.0 * intersection + self.smooth) / (p.sum() + y.sum() + self.smooth)
+        bce = nn.functional.binary_cross_entropy(p, y, reduction = 'mean')
 
         return dice + bce
 
-class JaccardLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
+class JaccardLoss(DiceLoss):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
+    def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
         p = torch.sigmoid(y_hat)
+
         intersection = (p * y).sum()
         total = (p + y).sum()
         union = total - intersection
-        J = 1 - (intersection + 1) / (union + 1)
+        J = 1 - (intersection + self.smooth) / (union + self.smooth)
 
         return J
 
+## https://arxiv.org/abs/1708.02002
 class FocalLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, alpha: float = 0.8, gamma: float = 2.0):
         super().__init__()
+        self.alpha = alpha
+        self.gamma = gamma
 
-    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
+    def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
         p = torch.sigmoid(y_hat)
-        bce = nn.functional.binary_cross_entropy(p, y)
+
+        bce = nn.functional.binary_cross_entropy(p, y, reduction = 'none')
         bce_exp = torch.exp(-bce)
-        focal = 0.8 * (1 - bce_exp) ** 2 * bce
-        return focal
+        focal = (self.alpha * (1 - bce_exp) ** self.gamma) * bce
+        return focal.mean()
 
-class TverskyLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
+## https://arxiv.org/abs/1706.05721
+class TverskyLoss(DiceLoss):
+    """
+    alpha controls how much to penalize false positives vs valse negatives
+    high alpha (1.0) means more penalty towards false positives while low
+    alpha (0.0) means more penalty towards false negatives.
 
-    def forward(self, y_hat: torch.tensor, y: torch.tensor) -> torch.tensor:
-        # p = torch.sigmoid(y_hat)
-        # p = y_hat
+    alpha == beta == 0.5 is equivalent to dice loss. 
+    """
+    def __init__(self, alpha: float = 0.5, **kwargs):
+        super().__init__(**kwargs)
+        assert 0.0 <= alpha <= 1.0
+        self.alpha = alpha
+        self.beta = 1.0 - alpha
 
-        # #True Positives, False Positives & False Negatives
-        # TP = (p * y).sum()    
-        # FP = ((1-y) * p).sum()
-        # FN = (y * (1-p)).sum()
-       
-        # Tversky = (TP + 1) / (TP + 0.5*FP + 0.5*FN + 1)
-        
-        # return 1 - Tversky
-        return None
+    def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
+        p = torch.sigmoid(y_hat)
+
+        tp = (p * y).sum()
+        fp = ((1.0 - y) * p).sum()
+        fn = (y * (1.0 - p)).sum()
+
+        tv = (tp + self.smooth) / (tp + self.alpha * fp + self.beta * fn)
+
+        return 1.0 - tv
+
+class FocalTverskyLoss(TverskyLoss):
+    def __init__(self, gamma: float = 2.0, **kwargs):
+        super().__init__(**kwargs)
+        self.gamma = gamma
+
+    def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
+        return super().forward(y_hat, y) ** self.gamma
