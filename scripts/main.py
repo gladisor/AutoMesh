@@ -12,6 +12,8 @@ from torch_geometric.nn import GraphSAGE, GraphNorm, GCNConv, SAGEConv, GATConv
 from pytorch_lightning import Trainer
 from pytorch_lightning.plugins import DDPSpawnPlugin
 from pytorch_lightning.loggers import CSVLogger
+from optuna import Trial, create_study, create_trial
+import pandas as pd
 
 ## local source
 from automesh.models.architectures import ParamGCN
@@ -22,7 +24,7 @@ from automesh.loss import (
     JaccardLoss, FocalLoss, TverskyLoss, FocalTverskyLoss)
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 
-if __name__ == '__main__':
+def heatmap_regressor(trial: Trial):
     transform = T.Compose([
         preprocess_pipeline(), 
         rotation_pipeline(),
@@ -36,27 +38,29 @@ if __name__ == '__main__':
         train_dataset = train,
         val_dataset = val,
         batch_size = batch_size,
-        num_workers = 4)
+        num_workers = 4,
+        persistent_workers = True)
+
+    hidden_channels = trial.suggest_int('hidden_channels', 128, 1024)
+    num_layers = trial.suggest_int('num_layers', 2, 10)
+    lr = trial.suggest_float('lr', 0.0001, 0.001)
 
     model = HeatMapRegressor(
         base = ParamGCN,
         base_kwargs = {
             'conv_layer': SAGEConv,
-            # 'conv_layer': FeastConv,
             'conv_kwargs': {},
-            # 'pool_layer': TopKPooling
-            # 'pool_kwargs: {'ratio': 0.5},
             'in_channels': 3,
-            'hidden_channels': 512,
-            'num_layers': 5,
+            'hidden_channels': hidden_channels,
+            'num_layers': num_layers,
             'out_channels': 8,
             'act': nn.GELU,
             # 'act_kwargs': {'negative_slope': 0.01},
-            'norm': GraphNorm(512)},
+            'norm': GraphNorm(hidden_channels)},
         loss_func = FocalLoss,
         loss_func_kwargs = {},
         opt = torch.optim.Adam,
-        opt_kwargs = {'lr': 0.0001}
+        opt_kwargs = {'lr': lr}
         )
 
     logger = CSVLogger(save_dir = 'results', name = 'testing')
@@ -74,10 +78,11 @@ if __name__ == '__main__':
         )
     
     trainer.fit(model, data)
-    
-    # model = HeatMapRegressor.load_from_checkpoint('results/testing/version_6/checkpoints/epoch=19-step=320.ckpt')
 
-    # for i in range(len(val)):
-    #     val.visualize_predicted_heat_map(i, model)
-    #     val.visualize_predicted_points(i, model)
-    #     val.display(i)
+    path = os.path.join(logger.save_dir, logger.name, 'version_' + str(logger.version - 1), 'metrics.csv')
+    history = pd.read_csv(path)
+    return history['nme'].min()
+
+if __name__ == '__main__':
+    study = create_study()
+    study.optimize(heatmap_regressor, n_trials = 100, direction = 'minimize')
