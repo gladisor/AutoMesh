@@ -11,7 +11,7 @@ from torch_geometric.data import LightningDataset
 from torch_geometric.nn import GraphSAGE, GraphNorm, GCNConv, SAGEConv, GATConv
 from pytorch_lightning import Trainer
 from pytorch_lightning.plugins import DDPSpawnPlugin
-from pytorch_lightning.loggers import CSVLogger
+from pytorch_lightning.loggers import CSVLogger, WandbLogger
 from optuna import Trial, create_study, create_trial
 from optuna.trial import FixedTrial
 import pandas as pd
@@ -24,6 +24,8 @@ from automesh.loss import (
     AdaptiveWingLoss, DiceLoss, BCEDiceLoss, 
     JaccardLoss, FocalLoss, TverskyLoss, FocalTverskyLoss)
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
+
+os.environ['WANDB_API_KEY'] = '9a6992594ce0851dbccb151860b2751420a558a3'
 
 def heatmap_regressor(trial: Trial):
     transform = T.Compose([
@@ -65,6 +67,7 @@ def heatmap_regressor(trial: Trial):
         )
 
     logger = CSVLogger(save_dir = 'results', name = 'best_numerical_params')
+    wandb_logger = WandbLogger(project = '')
 
     devices = 3
     num_batches = int(len(train) / batch_size) // devices

@@ -8,6 +8,7 @@
 #SBATCH --job-name automesh
 #SBATCH --output=log2.out
 
-source /scratch/htc/tshah/miniconda3/bin/activate automesh
-module load cuda-11.0.2
+export WANDB_API_KEY = "9a6992594ce0851dbccb151860b2751420a558a3"
+export WANDB_ENTITY= "tshah"
+source /scratch/htc/tshah/miniconda3/bin/activate automesh2
 srun python /scratch/htc/tshah/AutoMesh/scripts/main.py
