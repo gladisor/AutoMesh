@@ -78,16 +78,12 @@ class HeatMapRegressor(LightningModule):
         val_loss = self.landmark_loss(self(batch), batch.y)
 
         self.log(
-	    'nme',
-	    self.nme,
-	    batch_size = batch.num_graphs,
-#            sync_dist = True
+		'val',
+		    {
+		        'nme': self.nme,
+			'loss': val_los
+            batch_size = batch.num_graphs,
+            sync_dist = True
 	    )
 
-	self.log(
-	    'val/loss',
-	    val_loss,
-	    batch_size = batch.num_graphs,
-#	    sync_dist = True
-
-	return {'nme': self.nme, 'val_loss': val_loss}
+        return {'nme': self.nme, 'val_loss': val_loss}
