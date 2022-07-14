@@ -1,3 +1,5 @@
+*.ckpt
+*.out
 wandb
 .DS_Store
 results/*
