@@ -13,6 +13,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.plugins import DDPSpawnPlugin
 from pytorch_lightning.loggers import CSVLogger
 from optuna import Trial, create_study, create_trial
+from optuna.trial import FixedTrial
 import pandas as pd
 
 ## local source
@@ -27,13 +28,13 @@ from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 def heatmap_regressor(trial: Trial):
     transform = T.Compose([
         preprocess_pipeline(), 
-        rotation_pipeline(),
+        rotation_pipeline(degrees=50),
         ])
 
     train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
     val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
 
-    batch_size = 1
+    batch_size = 2
     data = LightningDataset(
         train_dataset = train,
         val_dataset = val,
@@ -63,9 +64,9 @@ def heatmap_regressor(trial: Trial):
         opt_kwargs = {'lr': lr}
         )
 
-    logger = CSVLogger(save_dir = 'results', name = 'testing')
+    logger = CSVLogger(save_dir = 'results', name = 'best_numerical_params')
 
-    devices = 2
+    devices = 3
     num_batches = int(len(train) / batch_size) // devices
 
     trainer = Trainer(
@@ -84,5 +85,9 @@ def heatmap_regressor(trial: Trial):
     return history['nme'].min()
 
 if __name__ == '__main__':
-    study = create_study()
-    study.optimize(heatmap_regressor, n_trials = 100, direction = 'minimize')
+    # study = create_study()
+    # study.optimize(heatmap_regressor, n_trials = 100)
+
+    trial = FixedTrial({'hidden_channels': 832, 'num_layers': 8, 'lr': 0.0007})
+
+    heatmap_regressor(trial)
