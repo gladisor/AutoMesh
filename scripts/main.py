@@ -2,6 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import pickle
 
 ## third party
 import torch
@@ -16,7 +17,6 @@ from pytorch_lightning.loggers import CSVLogger, NeptuneLogger, CometLogger, Wan
 from optuna import Trial, create_study, create_trial
 from optuna.trial import FixedTrial
 import pandas as pd
-import wandb
 
 ## local source
 from automesh.models.architectures import ParamGCN
@@ -26,13 +26,6 @@ from automesh.loss import (
     AdaptiveWingLoss, DiceLoss, BCEDiceLoss, 
     JaccardLoss, FocalLoss, TverskyLoss, FocalTverskyLoss)
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
-
-# os.environ['COMET_URL_OVERRIDE'] = 'https://www.comet.com/clientlib/'
-os.environ['WANDB_API_KEY'] = '9a6992594ce0851dbccb151860b2751420a558a3'
-os.environ['WANDB_MODE'] = 'offline'
-os.environ['WANDB_ENTITY'] = 'tshah'
-
-wandb.init()
 
 def heatmap_regressor(trial: Trial):
     seed_everything(42, workers = True)
@@ -54,8 +47,8 @@ def heatmap_regressor(trial: Trial):
         persistent_workers = True
 	)
 
-    hidden_channels = trial.suggest_int('hidden_channels', 128, 1024)
-    num_layers = trial.suggest_int('num_layers', 2, 10)
+    hidden_channels = trial.suggest_int('hidden_channels', 4, 10)
+    num_layers = trial.suggest_int('num_layers', 2, 4)
     lr = trial.suggest_float('lr', 0.0001, 0.001)
 
     params = {
@@ -85,51 +78,33 @@ def heatmap_regressor(trial: Trial):
         opt = params['opt'],
         opt_kwargs = params['opt_kwargs'])
 
-    # logger = CSVLogger(save_dir = 'results', name = 'best_numerical_params')
-    wandb_logger = WandbLogger()
-
-#    neptune_logger = NeptuneLogger(
-#        api_key = 'eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJjOTU0NTAwNi0wMWQyLTRlMDgtOThiZS1kZDE0NjE2YzA2MDMifQ==',
-#        project = 'tristan.shah/automesh',
-#	mode = 'offline',
-#	log_model_checkpoints = False,
-#	)
-
-
-#    cl = CometLogger(
-#        save_dir = '.',
-#        workspace = 'gladisor',  # Optional
-#        project_name = 'automesh',  # Optional
-#        api_key = '78RvPfsgNnp3mE3JVYZmKyngw',
-#        rest_api_key = '78RvPfsgNnp3mE3JVYZmKyngw',
-#        offline = True
-#        )
+    logger = CSVLogger(save_dir = 'results', name = 'optuna')
 
     devices = 3
     num_batches = int(len(train) / batch_size) // devices
 
     trainer = Trainer(
-        num_nodes = 1,
-        accelerator = 'gpu',
+        # num_nodes = 1,
+        accelerator = 'cpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = devices,
-        max_epochs = 50,
-        logger = wandb_logger,
+        max_epochs = 5,
+        logger = logger,
         log_every_n_steps = num_batches,
-	# enable_checkpointing = False
         )
 
     trainer.fit(model, data)
 
     path = os.path.join(logger.save_dir, logger.name, 'version_' + str(logger.version - 1), 'metrics.csv')
-    # print(neptune_logger.save_dir, neptune_logger.name, neptune_logger.version)
     history = pd.read_csv(path)
     return history['val_nme'].min()
 
 if __name__ == '__main__':
-    # study = create_study()
-    # study.optimize(heatmap_regressor, n_trials = 100)
+    study = create_study()
+    study.optimize(heatmap_regressor, n_trials = 4)
 
-    trial = FixedTrial({'hidden_channels': 832, 'num_layers': 8, 'lr': 0.0007})
+    with open('study.pkl', 'wb') as f:
+        pickle.dump(study, f)
 
-    heatmap_regressor(trial)
+    # trial = FixedTrial({'hidden_channels': 832, 'num_layers': 8, 'lr': 0.0007})
+    # heatmap_regressor(trial)
