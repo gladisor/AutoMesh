@@ -8,5 +8,5 @@
 #SBATCH --job-name automesh
 #SBATCH --output=log.out
 
-source /scratch/htc/tshah/miniconda3/bin/activate automesh2
+source /scratch/htc/tshah/miniconda3/bin/activate automesh
 srun python /scratch/htc/tshah/AutoMesh/scripts/main.py
