@@ -125,4 +125,4 @@ class FocalTverskyLoss(TverskyLoss):
         self.gamma = gamma
 
     def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
-        return super().forward(y_hat, y) ** self.gamma
+        return super().forward(y_hat, y) ** (1/self.gamma)
