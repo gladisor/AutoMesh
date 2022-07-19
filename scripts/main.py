@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import torch_geometric.transforms as T
 from torch_geometric.data import LightningDataset
-from torch_geometric.nn import GraphSAGE, GraphNorm, GCNConv, SAGEConv, GATConv
+from torch_geometric.nn import GraphSAGE, GraphNorm, GCNConv, SAGEConv, GATConv, FeaStConv
 from pytorch_lightning import Trainer
 from pytorch_lightning.plugins import DDPSpawnPlugin
 from pytorch_lightning.loggers import CSVLogger
@@ -34,7 +34,7 @@ def heatmap_regressor(trial: Trial):
     train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
     val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
 
-    batch_size = 2
+    batch_size = 1
     data = LightningDataset(
         train_dataset = train,
         val_dataset = val,
@@ -49,9 +49,9 @@ def heatmap_regressor(trial: Trial):
     model = HeatMapRegressor(
         base = ParamGCN,
         base_kwargs = {
-            'conv_layer': SAGEConv,
-            'conv_kwargs': {},
-            'in_channels': 3,
+            'conv_layer': FeaStConv,
+            'conv_kwargs': {'add_self_loops':False},
+            'in_channels': 3,   
             'hidden_channels': hidden_channels,
             'num_layers': num_layers,
             'out_channels': 8,
@@ -66,13 +66,16 @@ def heatmap_regressor(trial: Trial):
 
     logger = CSVLogger(save_dir = 'results', name = 'best_numerical_params')
 
-    devices = 3
-    num_batches = int(len(train) / batch_size) // devices
+    devices = 4
+    nodes = 3
+    num_batches = int(len(train) / batch_size) // (devices*nodes)
 
     trainer = Trainer(
+        gpus=-1,
         accelerator = 'gpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
-        devices = devices,
+        #devices = devices,
+        num_nodes=nodes,
         max_epochs = 150,
         logger = logger,
         log_every_n_steps = num_batches,
