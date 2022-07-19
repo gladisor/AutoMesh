@@ -1,0 +1,34 @@
+GATConv:
+  layer: !!python/name:torch_geometric.nn.conv.gat_conv.GATConv ''
+  params:
+    add_self_loops:
+    - true
+    - false
+    concat: false
+    dropout: !!python/tuple
+    - 0.0
+    - 0.5
+    heads: !!python/tuple
+    - 1
+    - 8
+GCNConv:
+  layer: !!python/name:torch_geometric.nn.conv.gcn_conv.GCNConv ''
+  params:
+    add_self_loops:
+    - true
+    - false
+    improved:
+    - true
+    - false
+    normalize:
+    - true
+    - false
+SAGEConv:
+  layer: !!python/name:torch_geometric.nn.conv.sage_conv.SAGEConv ''
+  params:
+    normalize:
+    - true
+    - false
+    project:
+    - true
+    - false
