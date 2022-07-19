@@ -17,6 +17,8 @@ from pytorch_lightning.plugins import DDPSpawnPlugin, environments
 from pytorch_lightning.loggers import CSVLogger
 from optuna import Trial, create_study, create_trial
 from optuna.trial import FixedTrial
+from optuna.integration import PyTorchLightningPruningCallback
+from optuna.pruners import HyperbandPruner
 import pandas as pd
 
 ## local source
@@ -44,7 +46,7 @@ def heatmap_regressor(trial: Trial):
         train_dataset = train,
         val_dataset = val,
         batch_size = batch_size,
-        num_workers = 4,
+        num_workers = 2,
         persistent_workers = True
 	)
 
@@ -96,6 +98,7 @@ def heatmap_regressor(trial: Trial):
         devices = devices,
         max_epochs = 50,
         logger = logger,
+        callbacks = [PyTorchLightningPruningCallback(trial, monitor='val_nme')]
         )
 
     trainer.fit(model, data)
@@ -105,7 +108,10 @@ def heatmap_regressor(trial: Trial):
     return history['val_nme'].min()
 
 if __name__ == '__main__':
-    study = create_study()
+    study = create_study(
+        direction = 'minimize',
+        pruner = HyperbandPruner())
+
     study.optimize(heatmap_regressor, n_trials = 100)
 
     with open('study.pkl', 'wb') as f:
