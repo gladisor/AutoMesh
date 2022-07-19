@@ -3,17 +3,18 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pickle
+# import socketserver
+# socketserver.TCPServer.allow_reuse_address = True
 
 ## third party
 import torch
 import torch.nn as nn
 import torch_geometric.transforms as T
 from torch_geometric.data import LightningDataset
-from torch_geometric.nn import GraphSAGE, GraphNorm, GCNConv, SAGEConv, GATConv
+from torch_geometric.nn import GraphNorm, SAGEConv, GATConv
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.plugins import DDPSpawnPlugin
-from pytorch_lightning.loggers import CSVLogger, NeptuneLogger, CometLogger, WandbLogger
-# from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.plugins import DDPSpawnPlugin, environments
+from pytorch_lightning.loggers import CSVLogger
 from optuna import Trial, create_study, create_trial
 from optuna.trial import FixedTrial
 import pandas as pd
@@ -28,7 +29,7 @@ from automesh.loss import (
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 
 def heatmap_regressor(trial: Trial):
-    seed_everything(42, workers = True)
+    seed_everything(42)
 
     transform = T.Compose([
         preprocess_pipeline(), 
@@ -38,7 +39,7 @@ def heatmap_regressor(trial: Trial):
     train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
     val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
 
-    batch_size = 2
+    batch_size = 1
     data = LightningDataset(
         train_dataset = train,
         val_dataset = val,
@@ -47,9 +48,9 @@ def heatmap_regressor(trial: Trial):
         persistent_workers = True
 	)
 
-    hidden_channels = trial.suggest_int('hidden_channels', 4, 10)
-    num_layers = trial.suggest_int('num_layers', 2, 4)
-    lr = trial.suggest_float('lr', 0.0001, 0.001)
+    hidden_channels = trial.suggest_int('hidden_channels', 32, 256)
+    num_layers = trial.suggest_int('num_layers', 3, 8)
+    lr = trial.suggest_float('lr', 0.00001, 0.001)
 
     params = {
         'base': ParamGCN,
@@ -80,17 +81,21 @@ def heatmap_regressor(trial: Trial):
 
     logger = CSVLogger(save_dir = 'results', name = 'optuna')
 
-    devices = 3
-    num_batches = int(len(train) / batch_size) // devices
+    num_nodes = 1
+    devices = -1
+
+    ddp_spawn_plugin = DDPSpawnPlugin(
+#        num_nodes = num_nodes,
+#        cluster_environment = environments.SLURMEnvironment(),
+        find_unused_parameters = False) 
 
     trainer = Trainer(
-        # num_nodes = 1,
-        accelerator = 'cpu',
-        strategy = DDPSpawnPlugin(find_unused_parameters = False),
+#        num_nodes = num_nodes,
+        accelerator = 'gpu',
+        strategy = ddp_spawn_plugin,
         devices = devices,
-        max_epochs = 5,
+        max_epochs = 50,
         logger = logger,
-        log_every_n_steps = num_batches,
         )
 
     trainer.fit(model, data)
@@ -101,10 +106,10 @@ def heatmap_regressor(trial: Trial):
 
 if __name__ == '__main__':
     study = create_study()
-    study.optimize(heatmap_regressor, n_trials = 4)
+    study.optimize(heatmap_regressor, n_trials = 100)
 
     with open('study.pkl', 'wb') as f:
         pickle.dump(study, f)
 
-    # trial = FixedTrial({'hidden_channels': 832, 'num_layers': 8, 'lr': 0.0007})
-    # heatmap_regressor(trial)
+    #trial = FixedTrial({'hidden_channels': 832, 'num_layers': 8, 'lr': 0.0007})
+    #heatmap_regressor(trial)

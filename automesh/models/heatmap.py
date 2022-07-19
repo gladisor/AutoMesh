@@ -61,7 +61,13 @@ class HeatMapRegressor(LightningModule):
         ## compute landmark loss on each channel
         loss = self.landmark_loss(self(batch), batch.y)
 
-        self.log('train_loss', loss, batch_size = batch.num_graphs)
+        self.log(
+            'train_loss', 
+            loss, 
+            batch_size = batch.num_graphs,
+            on_step=False,
+            on_epoch=True, 
+            sync_dist = True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -88,7 +94,9 @@ class HeatMapRegressor(LightningModule):
             'val_nme',
             self.nme,
             batch_size = batch.num_graphs,
-#           sync_dist = True
+            on_step=False,
+            on_epoch=True,
+            sync_dist = True
             )
 
         self.log(
