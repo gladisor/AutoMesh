@@ -45,7 +45,7 @@ class HeatMapRegressor(LightningModule):
             return self.base(x.pos, x.edge_index, x.edge_attr)
         else:
             return self.base(x.pos, x.edge_index)
-    
+
     def configure_optimizers(self):
         return self.opt(self.base.parameters(), **self.opt_kwargs)
 
@@ -61,7 +61,13 @@ class HeatMapRegressor(LightningModule):
         ## compute landmark loss on each channel
         loss = self.landmark_loss(self(batch), batch.y)
 
-        self.log('train_loss', loss, batch_size = batch.num_graphs)
+        self.log(
+            'train_loss', 
+            loss, 
+            batch_size = batch.num_graphs,
+            on_step=False,
+            on_epoch=True, 
+            sync_dist = True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -72,15 +78,32 @@ class HeatMapRegressor(LightningModule):
             pred_points = HeatMapRegressor.predict_points(heatmap, data.x)
             true_points = HeatMapRegressor.predict_points(data.y, data.x)
 
+            # print("Pred Points", pred_points.shape)
+            # print("True Points", true_points.shape)
+            # print("Heatmap ", heatmap.shape)
+            # print("Ground Truth Heatmap ", data.y.shape)
+            # print("Data vertices shape: ", data.x.shape)
+            # print("Data type ", type(data))
+
             self.nme.update(pred_points, true_points)
 
         ## compute loss on validation batch as well
         val_loss = self.landmark_loss(self(batch), batch.y)
-        
+
         self.log(
-            'nme',
+            'val_nme',
             self.nme,
             batch_size = batch.num_graphs,
-            sync_dist = True)
+            on_step=False,
+            on_epoch=True,
+            sync_dist = True
+            )
 
-        return {'nme': self.nme, 'val_loss': val_loss}
+        self.log(
+            'val_loss',
+            val_loss,
+            batch_size = batch.num_graphs,
+#	    sync_dist = True
+            )
+
+        return {'val_nme': self.nme, 'val_loss': val_loss}
