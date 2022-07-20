@@ -13,15 +13,11 @@ import torch_geometric.transforms as T
 from torch_geometric.data import LightningDataset
 from torch_geometric.nn import GraphNorm, SAGEConv, GATConv
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.plugins import DDPSpawnPlugin, environments
+from pytorch_lightning.plugins import DDPSpawnPlugin
 from pytorch_lightning.loggers import CSVLogger
-from pytorch_lightning.callbacks import Callback
-from optuna import Trial, TrialPruned, create_study
+from pytorch_lightning.callbacks import Callback, EarlyStopping
+from optuna import Trial, create_study, pruners, samplers
 from optuna.trial import FixedTrial
-from optuna.integration import PyTorchLightningPruningCallback
-
-from optuna.samplers import RandomSampler
-from optuna.pruners import HyperbandPruner, MedianPruner, PercentilePruner, BasePruner
 import pandas as pd
 
 ## local source
@@ -47,9 +43,6 @@ class AutoMeshPruning(Callback):
         trial = self.trial.storage.get_trial(self.trial._trial_id)
 
         should_prune = self.trial.study.pruner.prune(self.trial.study, trial)
-
-        print(f'Should Prune? : {should_prune}')
-
         should_stop = should_prune or self.trial.study.pruner.prune(self.trial.study, self.trial)
         should_stop = trainer.strategy.reduce_boolean_decision(should_stop)
         trainer.should_stop = trainer.should_stop or should_stop
@@ -58,12 +51,19 @@ class AutoMeshPruning(Callback):
             message = "Trial was pruned at epoch {}.".format(epoch)
             print(message)
 
-class AlwaysPrune(BasePruner):
+class AlwaysPrune(pruners.BasePruner):
     def __init__(self) -> None:
         super().__init__()
 
     def prune(self, study, trial: Trial) -> bool:
         return True
+
+activations = {
+    'nn.GELU': nn.GELU,
+    'nn.ELU': nn.ELU,
+    'nn.ReLU': nn.ReLU,
+    'nn.LeakyReLU': nn.LeakyReLU
+}
 
 def heatmap_regressor(trial: Trial):
     seed_everything(42)
@@ -81,10 +81,12 @@ def heatmap_regressor(trial: Trial):
         train_dataset = train,
         val_dataset = val,
         batch_size = batch_size,
-        num_workers = 3)
+        num_workers = 10)
 
-    hidden_channels = trial.suggest_int('hidden_channels', 10, 20)
-    num_layers = trial.suggest_int('num_layers', 2, 3)
+    hidden_channels = trial.suggest_int('hidden_channels', 64, 256)
+    num_layers = trial.suggest_int('num_layers', 2, 10)
+    act = trial.suggest_categorical('act', list(activations.keys()))
+    act = activations[act]
     # lr = trial.suggest_float('lr', 0.00001, 0.001)
     lr = 0.00001
 
@@ -97,8 +99,8 @@ def heatmap_regressor(trial: Trial):
             'hidden_channels': hidden_channels,
             'num_layers': num_layers,
             'out_channels': 8,
-            # 'act': trial.suggest_categorical('act', [nn.GELU, nn.ELU, nn.ReLU, nn.LeakyReLU]),
-            'act': nn.ReLU,
+            # 'act': nn.ReLU,
+            'act': act,
             'act_kwargs': {},
             'norm': GraphNorm(hidden_channels)
         },
@@ -122,10 +124,13 @@ def heatmap_regressor(trial: Trial):
         num_sanity_val_steps=0,
         accelerator = 'cpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
-        devices = 3,
-        max_epochs = 5,
+        devices = 4,
+        max_epochs = 100,
         logger = logger,
-        callbacks = [AutoMeshPruning(trial, monitor='val_nme')]
+        callbacks = [
+            AutoMeshPruning(trial, monitor='val_nme'),
+            EarlyStopping(monitor='val_nme', mode='min')
+            ]
         )
 
     trainer.fit(model, data)
@@ -138,12 +143,9 @@ def heatmap_regressor(trial: Trial):
 if __name__ == '__main__':
     study = create_study(
         direction = 'minimize',
-        sampler = RandomSampler(),
-        # pruner = PercentilePruner(percentile = 1.0, n_startup_trials = 1)
-        pruner = AlwaysPrune()
-        )
+        pruner = pruners.HyperbandPruner())
 
-    study.optimize(heatmap_regressor, n_trials = 10)
+    study.optimize(heatmap_regressor, n_trials = 200)
 
     with open('study.pkl', 'wb') as f:
         pickle.dump(study, f)
