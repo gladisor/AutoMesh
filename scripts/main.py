@@ -46,7 +46,7 @@ def heatmap_regressor(trial: Trial):
         train_dataset = train,
         val_dataset = val,
         batch_size = batch_size,
-        num_workers = 2,
+        num_workers = 1,
         persistent_workers = True
 	)
 
@@ -82,23 +82,17 @@ def heatmap_regressor(trial: Trial):
         opt_kwargs = params['opt_kwargs'])
 
     logger = CSVLogger(save_dir = 'results', name = 'optuna')
+    devices = 1
 
-    num_nodes = 1
-    devices = -1
-
-    ddp_spawn_plugin = DDPSpawnPlugin(
-#        num_nodes = num_nodes,
-#        cluster_environment = environments.SLURMEnvironment(),
-        find_unused_parameters = False) 
+    ddp_spawn_plugin = DDPSpawnPlugin(find_unused_parameters = False) 
 
     trainer = Trainer(
-#        num_nodes = num_nodes,
         accelerator = 'gpu',
         strategy = ddp_spawn_plugin,
         devices = devices,
         max_epochs = 50,
         logger = logger,
-        callbacks = [PyTorchLightningPruningCallback(trial, monitor='val_nme')]
+        # callbacks = [PyTorchLightningPruningCallback(trial, monitor='val_nme')]
         )
 
     trainer.fit(model, data)
@@ -109,13 +103,12 @@ def heatmap_regressor(trial: Trial):
 
 if __name__ == '__main__':
     study = create_study(
-        direction = 'minimize',
-        pruner = HyperbandPruner())
+        direction = 'minimize')
 
     study.optimize(heatmap_regressor, n_trials = 100)
 
     with open('study.pkl', 'wb') as f:
         pickle.dump(study, f)
 
-    #trial = FixedTrial({'hidden_channels': 832, 'num_layers': 8, 'lr': 0.0007})
-    #heatmap_regressor(trial)
+    # trial = FixedTrial({'hidden_channels': 64, 'num_layers': 3, 'lr': 0.0001})
+    # heatmap_regressor(trial)
