@@ -1,16 +1,17 @@
 #!/bin/bash -l
 #SBATCH -p gpu
+
 #SBATCH --nodes=1
-##SBATCH --ntasks-per-node=2
-#SBATCH --gres=gpu:2
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=64gb
-#SBATCH --time=04:00:00
+#SBATCH --gres=gpu:4
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=0
+
+#SBATCH --time=05:00:00
 #SBATCH --job-name automesh
 #SBATCH --output=log.out
 #SBATCH --mail-user=tristan.shah@sjsu.edu
 
-# export NCCL_DEBUG=INFO
+export NCCL_DEBUG=INFO
 # export MASTER_PORT=46356
 # export WORLD_SIZE=4
 

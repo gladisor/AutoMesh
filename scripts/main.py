@@ -46,8 +46,9 @@ def heatmap_regressor(trial: Trial):
         train_dataset = train,
         val_dataset = val,
         batch_size = batch_size,
-        num_workers = 1,
-        persistent_workers = True
+        num_workers = 10,
+#        pin_memory = True
+#        persistent_workers = True
 	)
 
     hidden_channels = trial.suggest_int('hidden_channels', 32, 256)
@@ -63,7 +64,7 @@ def heatmap_regressor(trial: Trial):
             'hidden_channels': hidden_channels,
             'num_layers': num_layers,
             'out_channels': 8,
-            'act': nn.GELU,
+            'act': trial.suggest_categorical('act', [nn.GELU, nn.ELU, nn.ReLU, nn.LeakyReLU]),
             'act_kwargs': {},
             'norm': GraphNorm(hidden_channels)
         },
@@ -82,13 +83,13 @@ def heatmap_regressor(trial: Trial):
         opt_kwargs = params['opt_kwargs'])
 
     logger = CSVLogger(save_dir = 'results', name = 'optuna')
-    devices = 1
+    devices = -1
 
-    ddp_spawn_plugin = DDPSpawnPlugin(find_unused_parameters = False) 
+    ddp = DDPSpawnPlugin(find_unused_parameters = False) 
 
     trainer = Trainer(
         accelerator = 'gpu',
-        strategy = ddp_spawn_plugin,
+        strategy = ddp,
         devices = devices,
         max_epochs = 50,
         logger = logger,
@@ -110,5 +111,5 @@ if __name__ == '__main__':
     with open('study.pkl', 'wb') as f:
         pickle.dump(study, f)
 
-    # trial = FixedTrial({'hidden_channels': 64, 'num_layers': 3, 'lr': 0.0001})
-    # heatmap_regressor(trial)
+#    trial = FixedTrial({'hidden_channels': 256, 'num_layers': 5, 'lr': 0.0001})
+#    heatmap_regressor(trial)
