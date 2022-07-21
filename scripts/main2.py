@@ -58,6 +58,31 @@ class AlwaysPrune(pruners.BasePruner):
     def prune(self, study, trial: Trial) -> bool:
         return True
 
+
+class AutoMeshPruningCallback(PyTorchLightningPruningCallback):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def on_validation_end(self, trainer: Trainer, pl_module: HeatMapRegressor) -> None:
+        epoch = pl_module.current_epoch
+
+        current_score = trainer.callback_metrics.get(self.monitor)
+        if current_score is None:
+            message = (
+                "The metric '{}' is not in the evaluation logs for pruning. "
+                "Please make sure you set the correct metric name.".format(self.monitor)
+            )
+            warnings.warn(message)
+            return
+        try:
+            self._trial.report(current_score, step=epoch)
+        except Exception:
+            pass
+
+        if self._trial.should_prune():
+            message = "Trial was pruned at epoch {}.".format(epoch)
+            raise optuna.TrialPruned(message)
+
 activations = {
     'nn.GELU': nn.GELU,
     'nn.ELU': nn.ELU,
@@ -125,10 +150,11 @@ def heatmap_regressor(trial: Trial):
         accelerator = 'gpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
-        max_epochs = 100,
+        max_epochs = 100, #50
         logger = logger,
-        callbacks = PyTorchLightningPruningCallback(trial, monitor = 'val_nme')
+        callbacks = AutoMeshPruningCallback(trial, monitor = 'val_nme')
         )
+
 
     trainer.fit(model, data)
 
@@ -143,8 +169,8 @@ if __name__ == '__main__':
 
     study = create_study(
         direction = 'minimize',
-        #pruner = pruners.HyperbandPruner()
+        pruner = pruners.HyperbandPruner(),
         storage = 'sqlite:///database.db'
         )
 
-    study.optimize(heatmap_regressor, n_trials = 10)
+    study.optimize(heatmap_regressor, n_trials = 200)
