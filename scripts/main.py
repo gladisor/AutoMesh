@@ -88,7 +88,7 @@ def heatmap_regressor(trial: Trial):
     act = trial.suggest_categorical('act', list(activations.keys()))
     act = activations[act]
     # lr = trial.suggest_float('lr', 0.00001, 0.001)
-    lr = 0.00001
+    lr = 0.0005
 
     params = {
         'base': ParamGCN,
@@ -122,15 +122,15 @@ def heatmap_regressor(trial: Trial):
 
     trainer = Trainer(
         num_sanity_val_steps=0,
-        accelerator = 'cpu',
+        accelerator = 'gpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
         max_epochs = 100,
         logger = logger,
-        callbacks = [
-            AutoMeshPruning(trial, monitor='val_nme'),
-            EarlyStopping(monitor='val_nme', mode='min')
-            ]
+        #callbacks = [
+            #AutoMeshPruning(trial, monitor='val_nme'),
+#            EarlyStopping(monitor='val_nme', mode='min')
+            #]
         )
 
     trainer.fit(model, data)
@@ -143,7 +143,8 @@ def heatmap_regressor(trial: Trial):
 if __name__ == '__main__':
     study = create_study(
         direction = 'minimize',
-        pruner = pruners.HyperbandPruner())
+        #pruner = pruners.HyperbandPruner()
+        )
 
     study.optimize(heatmap_regressor, n_trials = 200)
 

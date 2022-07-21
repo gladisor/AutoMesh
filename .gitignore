@@ -1,5 +1,7 @@
 *.ckpt
 *.out
+*.db
+Automesh/*.db
 wandb
 .DS_Store
 results/*
