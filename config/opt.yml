@@ -1,0 +1,36 @@
+Adagrad:
+  obj: !!python/name:torch.optim.adagrad.Adagrad ''
+  params:
+    lr-decay: !!python/tuple
+    - 0.0
+    - 0.7
+    weight_decay:
+    - 0.0
+    - 0.1
+    - 0.001
+    - 0.0001
+    - 1.0e-06
+Adam:
+  obj: !!python/name:torch.optim.adam.Adam ''
+  params:
+    weight_decay:
+    - 0.0
+    - 0.1
+    - 0.001
+    - 0.0001
+    - 1.0e-06
+SGD:
+  obj: !!python/name:torch.optim.sgd.SGD ''
+  params:
+    momentum:
+    - 0.0
+    - 0.9
+    nesterov:
+    - true
+    - false
+    weight_decay:
+    - 0.0
+    - 0.1
+    - 0.001
+    - 0.0001
+    - 1.0e-06
