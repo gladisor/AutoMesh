@@ -20,9 +20,9 @@ from pytorch_lightning.utilities.warnings import PossibleUserWarning, LightningD
 warnings.filterwarnings('ignore', category = PossibleUserWarning)
 warnings.filterwarnings('ignore', category = LightningDeprecationWarning)
 
-from optuna import Trial, create_study, samplers, pruners, TrialPruned
+from optuna import Trial, create_study, samplers, pruners
+from optuna.exceptions import TrialPruned
 from optuna.trial import FixedTrial
-from optuna.integration import PyTorchLightningPruningCallback
 import pandas as pd
 
 ## local source
@@ -31,31 +31,6 @@ from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
 from automesh.loss import FocalLoss
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
-
-# class AutoMeshPruningCallback(PyTorchLightningPruningCallback):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-
-#     def on_validation_end(self, trainer: Trainer, pl_module: HeatMapRegressor):
-#         epoch = pl_module.current_epoch
-
-#         current_score = trainer.callback_metrics.get(self.monitor)
-
-#         if trainer.is_global_zero:
-#             self._trial.report(current_score, step = epoch)
-
-        # try:
-        #     self._trial.report(current_score, step = epoch)
-        # except Exception:
-        #     pass
-        # else:
-        #     should_stop = trainer.training_type_plugin.broadcast(self._trial.should_prune())
-        #     if should_stop:
-        #         print('Trial was pruned at epoch {}.'.format(epoch))
-        #         raise TrialPruned('Trial was pruned')
-
-            # should_stop = trainer.strategy.reduce_boolean_decision(self._trial.should_prune())
-            # trainer.should_stop = trainer.should_stop or should_stop
 
 class OptimalMetric(Callback):
     def __init__(self, direction: str, monitor: str):
@@ -93,15 +68,24 @@ class AutoMeshPruning(Callback):
 
         self.trial = trial
         self.metric = metric
+        self.pruned = False
 
     def on_validation_end(self, trainer: Trainer, pl_module: HeatMapRegressor):
         score = trainer.callback_metrics.get(self.metric)
         epoch = pl_module.current_epoch
 
+        should_stop = False
         if trainer.is_global_zero:
             self.trial.report(score, epoch)
+            should_stop = self.trial.should_prune()
+            self.pruned = should_stop
+            trainer.callback_metrics['pruned'] = should_stop
 
-        trainer.should_stop = trainer.training_type_plugin.broadcast(self.trial.should_prune())
+        trainer.should_stop = trainer.training_type_plugin.broadcast(should_stop)
+    
+    # def on_fit_end(self, trainer: Trainer, pl_module: HeatMapRegressor):
+    #     if self.pruned:
+    #         raise TrialPruned()
 
 class AlwaysPrune(pruners.BasePruner):
     def __init__(self) -> None:
@@ -185,18 +169,23 @@ def heatmap_regressor(trial: Trial):
         ])
 
     trainer.fit(model, data)
+
+    if trainer.callback_metrics['pruned']:
+        raise TrialPruned()
+
     return trainer.callback_metrics[tracker.name]
 
 if __name__ == '__main__':
 
-    db = sqlite3.connect('database.db')
+    db_name = 'database.db'
+    db = sqlite3.connect(db_name)
 
     study = create_study(
         direction = 'minimize',
         sampler = samplers.RandomSampler(),
         # pruner = pruners.MedianPruner(),
         pruner = AlwaysPrune(),
-        storage = 'sqlite:///database.db')
+        storage = f'sqlite:///{db_name}')
 
     study.optimize(heatmap_regressor, n_trials = 30)
 
