@@ -32,23 +32,30 @@ from automesh.models.heatmap import HeatMapRegressor
 from automesh.loss import FocalLoss
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 
-class AutoMeshPruningCallback(PyTorchLightningPruningCallback):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+# class AutoMeshPruningCallback(PyTorchLightningPruningCallback):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
 
-    def on_validation_end(self, trainer: Trainer, pl_module: HeatMapRegressor):
-        epoch = pl_module.current_epoch
+#     def on_validation_end(self, trainer: Trainer, pl_module: HeatMapRegressor):
+#         epoch = pl_module.current_epoch
 
-        current_score = trainer.callback_metrics.get(self.monitor)
+#         current_score = trainer.callback_metrics.get(self.monitor)
 
-        try:
-            self._trial.report(current_score, step=epoch)
-        except Exception:
-            pass
-        else:
-            if self._trial.should_prune():
-                message = "Trial was pruned at epoch {}.".format(epoch)
-                raise TrialPruned(message)
+#         if trainer.is_global_zero:
+#             self._trial.report(current_score, step = epoch)
+
+        # try:
+        #     self._trial.report(current_score, step = epoch)
+        # except Exception:
+        #     pass
+        # else:
+        #     should_stop = trainer.training_type_plugin.broadcast(self._trial.should_prune())
+        #     if should_stop:
+        #         print('Trial was pruned at epoch {}.'.format(epoch))
+        #         raise TrialPruned('Trial was pruned')
+
+            # should_stop = trainer.strategy.reduce_boolean_decision(self._trial.should_prune())
+            # trainer.should_stop = trainer.should_stop or should_stop
 
 class OptimalMetric(Callback):
     def __init__(self, direction: str, monitor: str):
@@ -57,22 +64,44 @@ class OptimalMetric(Callback):
 
         self.direction = direction
         self.monitor = monitor
-
         self.name = self.direction + '_' + self.monitor
 
-    def on_validation_epoch_end(self, trainer: Trainer, _: HeatMapRegressor):
+    def on_validation_end(self, trainer: Trainer, _: HeatMapRegressor):
+        if not trainer.is_global_zero:
+            return
 
+        ## grab current value from rank 0 trainer
         current_value = trainer.callback_metrics.get(self.monitor).item()
 
+        ## best value has not been set yet
         if self.name not in trainer.callback_metrics:
             trainer.callback_metrics[self.name] = current_value
         else:
+
+            ## get best value
             best_value = trainer.callback_metrics[self.name]
             maximum_optimal = self.direction == 'maximize' and current_value > best_value
             minimum_optimal = self.direction == 'minimize' and current_value < best_value
 
+            ## update previous best value if better
             if maximum_optimal or minimum_optimal:
                 trainer.callback_metrics[self.name] = current_value
+
+class AutoMeshPruning(Callback):
+    def __init__(self, trial: Trial, metric: str):
+        super().__init__()
+
+        self.trial = trial
+        self.metric = metric
+
+    def on_validation_end(self, trainer: Trainer, pl_module: HeatMapRegressor):
+        score = trainer.callback_metrics.get(self.metric)
+        epoch = pl_module.current_epoch
+
+        if trainer.is_global_zero:
+            self.trial.report(score, epoch)
+
+        trainer.should_stop = trainer.training_type_plugin.broadcast(self.trial.should_prune())
 
 class AlwaysPrune(pruners.BasePruner):
     def __init__(self) -> None:
@@ -141,7 +170,7 @@ def heatmap_regressor(trial: Trial):
 
     logger = CSVLogger(save_dir = 'results', name = 'database')
     tracker = OptimalMetric('minimize', 'val_nme')
-    pruner = AutoMeshPruningCallback(trial, monitor = 'val_nme')
+    pruner = AutoMeshPruning(trial, 'val_nme')
 
     trainer = Trainer(
         num_sanity_val_steps=0,
@@ -150,7 +179,10 @@ def heatmap_regressor(trial: Trial):
         devices = 4,
         max_epochs = 10,
         logger = logger,
-        callbacks = [tracker, pruner])
+        callbacks = [
+            tracker, 
+            pruner
+        ])
 
     trainer.fit(model, data)
     return trainer.callback_metrics[tracker.name]
