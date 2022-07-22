@@ -3,7 +3,6 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pickle
-import time
 # import socketserver
 # socketserver.TCPServer.allow_reuse_address = True
 
@@ -30,28 +29,6 @@ from automesh.loss import (
     JaccardLoss, FocalLoss, TverskyLoss, FocalTverskyLoss)
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 
-
-
-class timerCallback(Callback):
-    def __init__(self):
-        self.startingtime=time.time()
-        # self.traininginit=time.time()
-        print ('init callback', self.startingtime)
-        
-    def on_init_start(self,trainer):
-        self.startingtime =time.time()
-        print('starting',self.startingtime)
-    
-    # def on_init_end(self,trainer):
-    #     print('init endingXXXXXXXXXXXXXXXXXXX')
-    
-    def on_train_start(self, trainer, pl_module):
-        #self.traininginit = time.time()-self.startingtime
-        print("Trainingtime init= ", time.time()-self.startingtime)
-    
-    def on_train_end(self, trainer, pl_module):
-        
-        print("Trainingtime all = ",time.time()-self.startingtime)
         
 
 def heatmap_regressor(trial: Trial):
@@ -124,7 +101,6 @@ def heatmap_regressor(trial: Trial):
         find_unused_parameters = False) 
 
     trainer = Trainer(
-        callbacks=[timerCallback()],
 #       num_nodes = num_nodes,
         accelerator = 'gpu',
         strategy = ddp_spawn_plugin,
