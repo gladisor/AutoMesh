@@ -34,5 +34,5 @@ if __name__ == '__main__':
         }
     }
 
-    with open('config/opt.yml', 'w') as f:
+    with open('automesh/config/opt.yml', 'w') as f:
         yaml.dump(opt, f)

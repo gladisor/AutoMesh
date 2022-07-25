@@ -16,6 +16,6 @@ if __name__ == '__main__':
             }
     }
 
-    with open('config/norm.yml', 'w') as f:
+    with open('automesh/config/norm.yml', 'w') as f:
         yaml.dump(norms, f)
         

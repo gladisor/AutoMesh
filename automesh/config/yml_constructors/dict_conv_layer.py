@@ -36,5 +36,5 @@ if __name__ == '__main__':
         }
     }
 
-    with open('config/conv_layer.yml', 'w') as f:
+    with open('automesh/config/conv_layer.yml', 'w') as f:
         yaml.dump(conv_layer, f)
