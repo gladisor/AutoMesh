@@ -118,8 +118,8 @@ if __name__ == '__main__':
 
     study = create_study(
         direction = 'minimize',
-        sampler = samplers.RandomSampler(),
-        pruner = pruners.ThresholdPruner(upper = 50.0),
+        # sampler = samplers.RandomSampler(),
+        pruner = pruners.HyperbandPruner(),
         storage = f'sqlite:///{db_name}')
 
     study.optimize(heatmap_regressor, n_trials = 30)
