@@ -80,10 +80,10 @@ class JaccardLoss(DiceLoss):
 
 ## https://arxiv.org/abs/1708.02002
 class FocalLoss(nn.Module):
-    def __init__(self, alpha: float = 0.8, gamma: float = 2.0):
+    def __init__(self, alpha_f: float = 0.8, gamma_f: float = 2.0):
         super().__init__()
-        self.alpha = alpha
-        self.gamma = gamma
+        self.alpha = alpha_f
+        self.gamma = gamma_f
 
     def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
         p = torch.sigmoid(y_hat)
@@ -102,11 +102,11 @@ class TverskyLoss(DiceLoss):
 
     alpha == beta == 0.5 is equivalent to dice loss. 
     """
-    def __init__(self, alpha: float = 0.5, **kwargs):
+    def __init__(self, alpha_t: float = 0.5, **kwargs):
         super().__init__(**kwargs)
-        assert 0.0 <= alpha <= 1.0
-        self.alpha = alpha
-        self.beta = 1.0 - alpha
+        assert 0.0 <= alpha_t <= 1.0
+        self.alpha = alpha_t
+        self.beta = 1.0 - alpha_t
 
     def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
         p = torch.sigmoid(y_hat)
@@ -120,9 +120,9 @@ class TverskyLoss(DiceLoss):
         return 1.0 - tv
 
 class FocalTverskyLoss(TverskyLoss):
-    def __init__(self, gamma: float = 2.0, **kwargs):
+    def __init__(self, gamma_ft: float = 2.0, **kwargs):
         super().__init__(**kwargs)
-        self.gamma = gamma
+        self.gamma = gamma_ft
 
     def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
         return super().forward(y_hat, y) ** (1/self.gamma)
