@@ -14,7 +14,6 @@ from torch_geometric.nn import GraphNorm, SAGEConv
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.plugins import DDPSpawnPlugin
 from pytorch_lightning.loggers import CSVLogger
-from pytorch_lightning.callbacks import Callback, LambdaCallback
 
 from pytorch_lightning.utilities.warnings import PossibleUserWarning, LightningDeprecationWarning
 warnings.filterwarnings('ignore', category = PossibleUserWarning)
@@ -22,8 +21,6 @@ warnings.filterwarnings('ignore', category = LightningDeprecationWarning)
 
 from optuna import Trial, create_study, samplers, pruners
 from optuna.exceptions import TrialPruned
-from optuna.trial import FixedTrial
-import pandas as pd
 
 ## local source
 from automesh.models.architectures import ParamGCN
@@ -31,68 +28,7 @@ from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
 from automesh.loss import FocalLoss
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
-
-class OptimalMetric(Callback):
-    def __init__(self, direction: str, monitor: str):
-        super().__init__()
-        assert direction == 'maximize' or direction == 'minimize'
-
-        self.direction = direction
-        self.monitor = monitor
-        self.name = self.direction + '_' + self.monitor
-
-    def on_validation_end(self, trainer: Trainer, _: HeatMapRegressor):
-        if not trainer.is_global_zero:
-            return
-
-        ## grab current value from rank 0 trainer
-        current_value = trainer.callback_metrics.get(self.monitor).item()
-
-        ## best value has not been set yet
-        if self.name not in trainer.callback_metrics:
-            trainer.callback_metrics[self.name] = current_value
-        else:
-
-            ## get best value
-            best_value = trainer.callback_metrics[self.name]
-            maximum_optimal = self.direction == 'maximize' and current_value > best_value
-            minimum_optimal = self.direction == 'minimize' and current_value < best_value
-
-            ## update previous best value if better
-            if maximum_optimal or minimum_optimal:
-                trainer.callback_metrics[self.name] = current_value
-
-class AutoMeshPruning(Callback):
-    def __init__(self, trial: Trial, metric: str):
-        super().__init__()
-
-        self.trial = trial
-        self.metric = metric
-        self.pruned = False
-
-    def on_validation_end(self, trainer: Trainer, pl_module: HeatMapRegressor):
-        score = trainer.callback_metrics.get(self.metric)
-        epoch = pl_module.current_epoch
-
-        should_stop = False
-        if trainer.is_global_zero:
-            self.trial.report(score, epoch)
-            should_stop = self.trial.should_prune()
-            self.pruned = should_stop
-            trainer.callback_metrics['pruned'] = should_stop
-
-        trainer.should_stop = trainer.training_type_plugin.broadcast(should_stop)
-    
-    # def on_fit_end(self, trainer: Trainer, pl_module: HeatMapRegressor):
-    #     if self.pruned:
-    #         raise TrialPruned()
-
-class AlwaysPrune(pruners.BasePruner):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def prune(self, study, trial) -> bool:
-        return True
+from automesh.callbacks import OptimalMetric, AutoMeshPruning
 
 activations = {
     'nn.GELU': nn.GELU,
@@ -187,6 +123,3 @@ if __name__ == '__main__':
         storage = f'sqlite:///{db_name}')
 
     study.optimize(heatmap_regressor, n_trials = 30)
-
-    # trial = FixedTrial({'hidden_channels': 15, 'num_layers': 2, 'act': 'nn.LeakyReLU'})
-    # heatmap_regressor(trial)
