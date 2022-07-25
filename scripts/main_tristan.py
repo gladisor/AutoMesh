@@ -23,7 +23,7 @@ from optuna import Trial, create_study, samplers, pruners
 from optuna.exceptions import TrialPruned
 
 ## local source
-from automesh.models.architectures import ParamGCN
+from automesh.models.architectures import ParamGCN, ParamGraphUNet
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
 from automesh.loss import FocalLoss
@@ -39,7 +39,7 @@ activations = {
 
 def heatmap_regressor(trial: Trial):
     seed_everything(42)
-
+    
     transform = T.Compose([
         preprocess_pipeline(), 
         rotation_pipeline(degrees=50),
@@ -74,12 +74,12 @@ def heatmap_regressor(trial: Trial):
             'act_kwargs': {},
             'norm': GraphNorm(hidden_channels)
         },
-        'loss_func': FocalLoss,
-        'loss_func_kwargs': {},
-        'opt': torch.optim.Adam,
-        'opt_kwargs': {'lr': lr}
+        'loss_func': loss_func,
+        'loss_func_kwargs': loss_func_kwargs,
+        'opt': opt,
+        'opt_kwargs': {'lr' : basic_params['lr']}
     }
-
+    print('Params', params)
     model = HeatMapRegressor(
         base = params['base'],
         base_kwargs = params['base_kwargs'],

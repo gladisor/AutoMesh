@@ -1,3 +1,4 @@
+*.pkl
 *.ckpt
 *.out
 *.db

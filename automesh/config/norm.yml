@@ -1,0 +1,2 @@
+GraphNorm:
+  obj: !!python/name:torch_geometric.nn.norm.graph_norm.GraphNorm ''
