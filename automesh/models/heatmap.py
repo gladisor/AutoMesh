@@ -77,14 +77,6 @@ class HeatMapRegressor(LightningModule):
             heatmap = self(data)
             pred_points = HeatMapRegressor.predict_points(heatmap, data.x)
             true_points = HeatMapRegressor.predict_points(data.y, data.x)
-
-            # print("Pred Points", pred_points.shape)
-            # print("True Points", true_points.shape)
-            # print("Heatmap ", heatmap.shape)
-            # print("Ground Truth Heatmap ", data.y.shape)
-            # print("Data vertices shape: ", data.x.shape)
-            # print("Data type ", type(data))
-
             self.nme.update(pred_points, true_points)
 
         ## compute loss on validation batch as well
@@ -103,7 +95,10 @@ class HeatMapRegressor(LightningModule):
             'val_loss',
             val_loss,
             batch_size = batch.num_graphs,
-#	    sync_dist = True
+            sync_dist = True
             )
 
         return {'val_nme': self.nme, 'val_loss': val_loss}
+    
+    def on_validation_epoch_end(self) -> None:
+        return 

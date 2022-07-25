@@ -26,6 +26,10 @@ if __name__ == '__main__':
     #     val.display(i)
 
     study = pickle.load(open('study.pkl', 'rb'))
-    fig = optuna.visualization.plot_intermediate_values(study)
-    fig.show()
+    for trial in study.trials:
+        intermediate_values = trial.storage.get_trial(trial._trial_id).intermediate_values
+        print(intermediate_values)
+
+    # fig = optuna.visualization.plot_intermediate_values(study)
+    # fig.show()
 
