@@ -29,13 +29,8 @@ from automesh.models.heatmap import HeatMapRegressor
 from automesh.loss import FocalLoss
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 from automesh.callbacks import OptimalMetric, AutoMeshPruning
+from automesh.config.param_selector import ParamSelector
 
-activations = {
-    'nn.GELU': nn.GELU,
-    'nn.ELU': nn.ELU,
-    'nn.ReLU': nn.ReLU,
-    'nn.LeakyReLU': nn.LeakyReLU
-}
 
 def heatmap_regressor(trial: Trial):
     seed_everything(42)
@@ -55,30 +50,35 @@ def heatmap_regressor(trial: Trial):
         batch_size = batch_size,
         num_workers = 3)
 
-    hidden_channels = trial.suggest_int('hidden_channels', 10, 20)
-    num_layers = trial.suggest_int('num_layers', 2, 4)
-    act = trial.suggest_categorical('act', list(activations.keys()))
-    act = activations[act]
-    lr = 0.0005
+    param_selector = ParamSelector(trial)
+    
+    
+    basic_params=param_selector.get_basic_params('basic')
+    conv_layer, conv_layer_kwargs = param_selector.select_params('conv_layer')
+    act, act_kwargs = param_selector.select_params('act')
+    norm, norm_kwargs = param_selector.select_params('norm')
+    loss_func, loss_func_kwargs = param_selector.select_params('loss_func')
+    opt, opt_kwargs = param_selector.select_params('opt')
 
     params = {
         'base': ParamGCN,
         'base_kwargs': {
-            'conv_layer': SAGEConv,
-            'conv_kwargs': {},
-            'in_channels': 3,
-            'hidden_channels': hidden_channels,
-            'num_layers': num_layers,
-            'out_channels': 8,
+            'conv_layer': conv_layer,
+            'conv_layer_kwargs': conv_layer_kwargs,
+            'in_channels': basic_params['in_channels'],
+            'hidden_channels': basic_params['hidden_channels'],
+            'num_layers': basic_params['num_layers'],
+            'out_channels': basic_params['out_channels'],
             'act': act,
-            'act_kwargs': {},
-            'norm': GraphNorm(hidden_channels)
+            'act_kwargs': act_kwargs,
+            'norm': norm(basic_params['hidden_channels'])
         },
         'loss_func': loss_func,
         'loss_func_kwargs': loss_func_kwargs,
         'opt': opt,
         'opt_kwargs': {'lr' : basic_params['lr']}
     }
+    
     print('Params', params)
     model = HeatMapRegressor(
         base = params['base'],
@@ -122,4 +122,4 @@ if __name__ == '__main__':
         pruner = pruners.HyperbandPruner(),
         storage = f'sqlite:///{db_name}')
 
-    study.optimize(heatmap_regressor, n_trials = 30)
+    study.optimize(heatmap_regressor, n_trials = 200)

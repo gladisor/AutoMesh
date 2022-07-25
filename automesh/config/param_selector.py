@@ -58,14 +58,11 @@ class ParamSelector:
             except:
                 pass
         
-        params_names = list(parsed_yaml.keys())
-        print("base_params_names=", params_names)
+        params_names = list(parsed_yaml.keys())       
         params={}
         
         for param_name in params_names:
-            value=parsed_yaml[param_name]
-            print (param_name,type(value),value)
-            
+            value=parsed_yaml[param_name]            
             if type(value) == tuple:
                 if type(value[0]) == int:
                     params[param_name] = self.trial.suggest_int(param_name, value[0], value[1])
@@ -75,17 +72,6 @@ class ParamSelector:
                 params[param_name] = self.trial.suggest_categorical(param_name, value)
             elif (type(value)== int) or (type(value)==float):
                 params[param_name]=value
-                print("PPPPPPPPPPPPPPPPPPPPPPPPPpppppfixed values work")
                     
-        print("xxxxxxxparams",params)  
         return params
-
-    
-# if __name__ == '__main__':
-# # #     #study = create_study()
-# # #     #study.optimize(ParameterSelector, n_trials = 20)
-# #      print("startet")
-#       trial = FixedTrial({'hidden_channels': 832, 'conv_layer': 'GATConv'})
-#       ps = ParamSelector(trial)
-
  
