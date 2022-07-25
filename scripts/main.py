@@ -76,7 +76,7 @@ def heatmap_regressor(trial: Trial):
         'loss_func': loss_func,
         'loss_func_kwargs': loss_func_kwargs,
         'opt': opt,
-        'opt_kwargs': {'lr' : basic_params['lr']}
+        'opt_kwargs': {'lr' : basic_params['lr'], **opt_kwargs}
     }
     
     print('Params', params)
