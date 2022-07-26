@@ -22,13 +22,12 @@ if __name__ == '__main__':
             'params': {
                 'momentum': [0.0, 0.9], #either or NO range
                 'weight_decay': [0.0, 0.1, 0.001, 0.0001, 0.000001],
-                'nesterov': [True, False]
             }
         },
         'Adagrad': {
             'obj': Adagrad,
             'params': {
-                'lr-decay': (0.0, 0.7), 
+                'lr_decay': (0.0, 0.7), 
                 'weight_decay': [0.0, 0.1, 0.001, 0.0001, 0.000001]
             }
         }

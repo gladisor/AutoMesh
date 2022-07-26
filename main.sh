@@ -9,9 +9,9 @@
 #SBATCH --time=12:00:00
 #SBATCH --job-name automesh_db
 #SBATCH --output=optunadb.out
-#SBATCH --mail-user=tristan.shah@sjsu.edu
+#SBATCH --mail-user=paul.zimmer@zib.de
 
 export NCCL_DEBUG=INFO
 
-source /scratch/htc/tshah/miniconda3/bin/activate automesh2
-srun python /scratch/htc/tshah/AutoMesh/scripts/main2.py
+source /scratch/htc/pzimmer/miniconda3/bin/activate automesh2
+srun python /scratch/htc/pzimmer/AutoMesh/scripts/main.py

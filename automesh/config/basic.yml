@@ -7,5 +7,5 @@ lr: !!python/tuple
 - 0.001
 num_layers: !!python/tuple
 - 3
-- 5
+- 8
 out_channels: 8

@@ -23,7 +23,7 @@ from optuna import Trial, create_study, samplers, pruners
 from optuna.exceptions import TrialPruned
 
 ## local source
-from automesh.models.architectures import ParamGCN, ParamGraphUNet
+from automesh.models.architectures import ParamGCN
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
 from automesh.loss import FocalLoss
@@ -48,7 +48,7 @@ def heatmap_regressor(trial: Trial):
         train_dataset = train,
         val_dataset = val,
         batch_size = batch_size,
-        num_workers = 3)
+        num_workers = 4)
 
     param_selector = ParamSelector(trial)
     
@@ -94,10 +94,10 @@ def heatmap_regressor(trial: Trial):
 
     trainer = Trainer(
         num_sanity_val_steps=0,
-        accelerator = 'auto',
+        accelerator = 'gpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
-        max_epochs = 10,
+        max_epochs = 150,
         logger = logger,
         callbacks = [
             tracker, 
@@ -117,9 +117,10 @@ if __name__ == '__main__':
     db = sqlite3.connect(db_name)
 
     study = create_study(
+        study_name= 'test_3',
         direction = 'minimize',
         # sampler = samplers.RandomSampler(),
         pruner = pruners.HyperbandPruner(),
         storage = f'sqlite:///{db_name}')
 
-    study.optimize(heatmap_regressor, n_trials = 200)
+    study.optimize(heatmap_regressor, n_trials = 500)

@@ -28,7 +28,6 @@ class ParamSelector:
                 pass
         obj_names = list(parsed_yaml.keys())
       
-        #conv layer ändern aus name ziehen 
         obj_name = self.trial.suggest_categorical(config_key, obj_names)
         
         obj = parsed_yaml[obj_name]['obj']  
