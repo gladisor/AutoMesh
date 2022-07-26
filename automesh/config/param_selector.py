@@ -8,16 +8,17 @@ from typing import Tuple, Dict
 
 from optuna import Trial
 from optuna.trial import FixedTrial
+from automesh.models.architectures import ParamGCN
 
 
 class ParamSelector:
     def __init__(self, trial: Trial):
         self.trial = trial
-        #self.select_params('conv_layer')
-        
-        #params=self.get_basic_params()
-        
-        
+  
+    
+#select trials from config .yml files. different initial categorical choices of
+#the initial suggest_categorical function affect the chooseable hyperparameters
+#down the line   
     def select_params(self, config_key: str) -> Tuple[object, Dict]:
         path=os.path.join('automesh/config/' + config_key + '.yml')
         with open(path, 'r') as stream:
@@ -73,4 +74,37 @@ class ParamSelector:
                 params[param_name]=value
                     
         return params
- 
+    
+    
+    #gets all parameters and passes them to the right place 
+    def param_passing(self):
+        
+        basic_params=self.read_basic_params('basic')
+        conv_layer, conv_layer_kwargs = self.select_params('conv_layer')
+        act, act_kwargs = self.select_params('act')
+        norm, norm_kwargs = self.select_params('norm')
+        loss_func, loss_func_kwargs = self.select_params('loss_func')
+        opt, opt_kwargs = self.select_params('opt')
+    
+        
+        all_params = {
+             'base': ParamGCN, ##hard coded but might be parameterized later
+             'base_kwargs': {
+                 'conv_layer': conv_layer,
+                 'conv_layer_kwargs': conv_layer_kwargs,
+                 'in_channels': basic_params['in_channels'],
+                 'hidden_channels': basic_params['hidden_channels'],
+                 'num_layers': basic_params['num_layers'],
+                 'out_channels': basic_params['out_channels'],
+                 'act': act,
+                 'act_kwargs': act_kwargs,
+                 'norm': norm(basic_params['hidden_channels'])
+             },
+             'loss_func': loss_func,
+             'loss_func_kwargs': loss_func_kwargs,
+             'opt': opt,
+             'opt_kwargs': {'lr' : basic_params['lr'], **opt_kwargs}
+         }
+         
+         
+        return all_params

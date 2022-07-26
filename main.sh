@@ -4,9 +4,9 @@
 #SBATCH --gpus-per-node=4
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=32G
-#SBATCH --time=12:00:00
+#SBATCH --time=23:59:59
 #SBATCH --job-name automesh_db
-#SBATCH --output=optunadb.out
+#SBATCH --output=optunadb_overnight.out
 #SBATCH --mail-user=paul.zimmer@zib.de
 
 export NCCL_DEBUG=INFO

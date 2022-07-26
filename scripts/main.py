@@ -50,36 +50,11 @@ def heatmap_regressor(trial: Trial):
         batch_size = batch_size,
         num_workers = 4)
 
-    param_selector = ParamSelector(trial)
-    
-    
-    basic_params=param_selector.get_basic_params('basic')
-    conv_layer, conv_layer_kwargs = param_selector.select_params('conv_layer')
-    act, act_kwargs = param_selector.select_params('act')
-    norm, norm_kwargs = param_selector.select_params('norm')
-    loss_func, loss_func_kwargs = param_selector.select_params('loss_func')
-    opt, opt_kwargs = param_selector.select_params('opt')
-
-    params = {
-        'base': ParamGCN,
-        'base_kwargs': {
-            'conv_layer': conv_layer,
-            'conv_layer_kwargs': conv_layer_kwargs,
-            'in_channels': basic_params['in_channels'],
-            'hidden_channels': basic_params['hidden_channels'],
-            'num_layers': basic_params['num_layers'],
-            'out_channels': basic_params['out_channels'],
-            'act': act,
-            'act_kwargs': act_kwargs,
-            'norm': norm(basic_params['hidden_channels'])
-        },
-        'loss_func': loss_func,
-        'loss_func_kwargs': loss_func_kwargs,
-        'opt': opt,
-        'opt_kwargs': {'lr' : basic_params['lr'], **opt_kwargs}
-    }
-    
+   
+    param_selector=ParamSelector(trial)
+    params=param_selector.param_passing()
     print('Params', params)
+    
     model = HeatMapRegressor(
         base = params['base'],
         base_kwargs = params['base_kwargs'],
