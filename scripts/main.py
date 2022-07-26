@@ -37,7 +37,7 @@ def heatmap_regressor(trial: Trial):
     
     transform = T.Compose([
         preprocess_pipeline(), 
-        rotation_pipeline(degrees=50),
+        rotation_pipeline(degrees=20),
         ])
 
     train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
@@ -97,7 +97,7 @@ def heatmap_regressor(trial: Trial):
         accelerator = 'gpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
-        max_epochs = 150,
+        max_epochs = 75,
         logger = logger,
         callbacks = [
             tracker, 
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     study = create_study(
         study_name= 'test_3',
         direction = 'minimize',
-        # sampler = samplers.RandomSampler(),
+        sampler = samplers.RandomSampler(),
         pruner = pruners.HyperbandPruner(),
         storage = f'sqlite:///{db_name}')
 
