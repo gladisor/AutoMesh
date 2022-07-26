@@ -117,7 +117,7 @@ if __name__ == '__main__':
     db = sqlite3.connect(db_name)
 
     study = create_study(
-        study_name= 'test_3',
+        #study_name= 'test_4',
         direction = 'minimize',
         # sampler = samplers.RandomSampler(),
         pruner = pruners.HyperbandPruner(),
