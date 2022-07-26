@@ -30,7 +30,7 @@ from automesh.loss import FocalLoss
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 from automesh.callbacks import OptimalMetric, AutoMeshPruning
 from automesh.config.param_selector import ParamSelector
-
+import automesh.loss
 
 def heatmap_regressor(trial: Trial):
     seed_everything(42)
@@ -51,8 +51,7 @@ def heatmap_regressor(trial: Trial):
         num_workers = 4)
 
     param_selector = ParamSelector(trial)
-    
-    
+
     basic_params=param_selector.get_basic_params('basic')
     conv_layer, conv_layer_kwargs = param_selector.select_params('conv_layer')
     act, act_kwargs = param_selector.select_params('act')

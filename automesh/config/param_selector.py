@@ -13,21 +13,13 @@ from optuna.trial import FixedTrial
 class ParamSelector:
     def __init__(self, trial: Trial):
         self.trial = trial
-        #self.select_params('conv_layer')
-        
-        #params=self.get_basic_params()
-        
-        
+
     def select_params(self, config_key: str) -> Tuple[object, Dict]:
         path=os.path.join('automesh/config/' + config_key + '.yml')
         with open(path, 'r') as stream:
-            try:
-                parsed_yaml=yaml.full_load(stream)
-               
-            except yaml.YAMLError as exc:
-                pass
+            parsed_yaml = yaml.full_load(stream)
+
         obj_names = list(parsed_yaml.keys())
-      
         obj_name = self.trial.suggest_categorical(config_key, obj_names)
         
         obj = parsed_yaml[obj_name]['obj']  
@@ -45,9 +37,8 @@ class ParamSelector:
                         params[arg] = self.trial.suggest_float(arg, value[0], value[1])
           
         return (obj, params)
-        
     
-        #suggesting base parameters: currently only hidden_channels, num_layers, lr
+    #suggesting base parameters: currently only hidden_channels, num_layers, lr
     def get_basic_params(self,config_key: str) ->  Dict:
     
         path=os.path.join('automesh/config/'+ config_key +'.yml')
