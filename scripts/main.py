@@ -21,15 +21,21 @@ warnings.filterwarnings('ignore', category = LightningDeprecationWarning)
 
 from optuna import Trial, create_study, samplers, pruners
 from optuna.exceptions import TrialPruned
+from optuna.trial import FixedTrial
 
 ## local source
 from automesh.models.architectures import ParamGCN
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
-from automesh.loss import FocalLoss
+from automesh.loss import FocalLoss, JaccardLoss
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 from automesh.callbacks import OptimalMetric, AutoMeshPruning
 from automesh.config.param_selector import ParamSelector
+
+
+from torch.nn import ReLU
+from torch_geometric.nn import GATConv
+from torch.optim import Adam
 
 
 def heatmap_regressor(trial: Trial):
@@ -72,7 +78,7 @@ def heatmap_regressor(trial: Trial):
         accelerator = 'gpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
-        max_epochs = 150,
+        max_epochs = 500,
         logger = logger,
         callbacks = [
             tracker, 
@@ -88,14 +94,31 @@ def heatmap_regressor(trial: Trial):
 
 if __name__ == '__main__':
 
-    db_name = 'database.db'
-    db = sqlite3.connect(db_name)
+    # db_name = 'database.db'
+    # db = sqlite3.connect(db_name)
 
-    study = create_study(
-        #study_name= 'test_4',
-        direction = 'minimize',
-        # sampler = samplers.RandomSampler(),
-        pruner = pruners.HyperbandPruner(),
-        storage = f'sqlite:///{db_name}')
+    # study = create_study(
+    #     #study_name= 'test_4',
+    #     direction = 'minimize',
+    #     # sampler = samplers.RandomSampler(),
+    #     pruner = pruners.HyperbandPruner(),
+    #     storage = f'sqlite:///{db_name}')
 
-    study.optimize(heatmap_regressor, n_trials = 500)
+    # study.optimize(heatmap_regressor, n_trials = 500)
+    
+    trial =FixedTrial({'act': 'ReLU',
+                       'add_self_loops': False,
+                       'concat': False,
+                       'conv_layer': 'GATConv',
+                       'dropout': 0.0012250542474682713,
+                       'heads': 2,
+                       'hidden_channels': 170,
+                       'loss_func': 'JaccardLoss',
+                       'lr': 0.00031583021936346486,
+                       'norm': 'GraphNorm',
+                       'num_layers': 8,
+                       'opt': 'Adam',
+                       'weight_decay': 0.0})
+    heatmap_regressor(trial)
+
+

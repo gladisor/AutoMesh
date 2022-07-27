@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --time=23:59:59
 #SBATCH --job-name automesh_db
-#SBATCH --output=optunadb_overnight.out
+#SBATCH --output=singleTrial.out
 #SBATCH --mail-user=paul.zimmer@zib.de
 
 export NCCL_DEBUG=INFO

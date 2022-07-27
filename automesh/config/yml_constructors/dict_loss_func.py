@@ -1,7 +1,7 @@
 ## allows us to access the automesh library from outside
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 import yaml
 
 from automesh.loss import (
@@ -19,7 +19,7 @@ if __name__ == '__main__':
                 'theta': (0.2, 0.8)
             }
         },
-        ####smoothing for both Dice could be added as parameter: default=1e-6
+        ###smoothing for both Dice could be added as parameter: default=1e-6
         'DiceLoss': {
             'obj': DiceLoss
         },
