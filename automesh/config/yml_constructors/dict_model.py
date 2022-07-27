@@ -7,6 +7,8 @@ from torch.optim import Adam, SGD, Adagrad
 from automesh.models.architectures import ParamGCN, GraphUNet
 
 
+
+
 #tuple for range list for categorical
 
 if __name__ == '__main__':
@@ -18,7 +20,6 @@ if __name__ == '__main__':
                 'out_channels': 'basic',
                 'hidden_channels': 'basic',
                 'num_layers': 'basic',
-                'lr':'basic',
                 'conv_layer': 'not_basic',
                 'norm': 'not_basic',
                 'act':'not_basic'
@@ -32,10 +33,7 @@ if __name__ == '__main__':
                 'out_channels': 'basic',
                 'hidden_channels': 'basic',
                 'depth':(3,6),
-                'pool_ratios': (0.5, 0.9),
-                'lr':'basic',
-                'norm': 'not_basic',
-                'act':'not_basic'
+                'pool_ratios': (0.5, 0.9)
             }
     }
 }

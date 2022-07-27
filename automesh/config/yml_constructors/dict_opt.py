@@ -1,7 +1,7 @@
 ## allows us to access the automesh library from outside
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 import yaml
 from torch.optim import Adam, SGD, Adagrad
 
@@ -13,7 +13,8 @@ if __name__ == '__main__':
         'Adam': {
             'obj': Adam,
             'params': {
-                'weight_decay': (0.0, 0.1)
+                'weight_decay': (0.0, 0.1),
+                'lr':'basic'
             }
         },
         # 'SGD': {
@@ -21,13 +22,15 @@ if __name__ == '__main__':
         #     'params': {
         #         'momentum': (0.0, 1.0), 
         #         'weight_decay': (0.0, 0.1),
+                # 'lr':'basic'
         #     }
         # },
         # 'Adagrad': {
         #     'obj': Adagrad,
         #     'params': {
         #         'lr_decay': (0.0, 0.7), 
-        #         'weight_decay': (0.0, 0.1)
+        #         'weight_decay': (0.0, 0.1),
+                # 'lr':'basic'
         #     }
         # }
     }

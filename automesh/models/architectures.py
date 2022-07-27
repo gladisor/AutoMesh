@@ -11,11 +11,11 @@ class ParamGCN(BasicGNN):
         self.conv_layer_kwargs=conv_layer_kwargs
         print(conv_layer_kwargs)
         print(kwargs)
-        print("XXXXXXXXXXXXXXXXXXXX")
         super().__init__(**kwargs)
   
     def init_conv(self, in_channels: int, out_channels: int,
                   **kwargs) -> MessagePassing:
+
         return self.conv_layer(in_channels, out_channels,**self.conv_layer_kwargs)
     
 

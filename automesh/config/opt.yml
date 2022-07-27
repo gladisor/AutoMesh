@@ -1,6 +1,7 @@
 Adam:
   obj: !!python/name:torch.optim.adam.Adam ''
   params:
+    lr: basic
     weight_decay: !!python/tuple
     - 0.0
     - 0.1

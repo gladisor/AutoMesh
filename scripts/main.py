@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import sqlite3
 import warnings
-
+import pprint
 ## third party
 import torch
 import torch.nn as nn
@@ -30,12 +30,13 @@ from automesh.models.heatmap import HeatMapRegressor
 from automesh.loss import FocalLoss, JaccardLoss
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 from automesh.callbacks import OptimalMetric, AutoMeshPruning
-from automesh.config.param_selector import ParamSelector
+from automesh.config.param_selector import Selector
 
 
 from torch.nn import ReLU
 from torch_geometric.nn import GATConv
 from torch.optim import Adam
+
 
 
 def heatmap_regressor(trial: Trial):
@@ -56,19 +57,19 @@ def heatmap_regressor(trial: Trial):
         batch_size = batch_size,
         num_workers = 4)
 
-   
-    param_selector=ParamSelector(trial)
-    params=param_selector.param_passing()
-    print('Params', params)
-    
-    model = HeatMapRegressor(
-        base = params['base'],
-        base_kwargs = params['base_kwargs'],
-        loss_func = params['loss_func'],
-        loss_func_kwargs = params['loss_func_kwargs'],
-        opt = params['opt'],
-        opt_kwargs = params['opt_kwargs'])
 
+    selector = Selector(trial, ['model', 'loss_func', 'opt'])
+    pprint.pprint(selector.params())
+    params = selector.params()
+    
+    if 'norm' in params['model_kwargs'].keys():
+        params['model_kwargs']['norm'] = params['model_kwargs']['norm'](params['model_kwargs']['hidden_channels'])
+        
+    model = HeatMapRegressor(**selector.params())
+    # print(model)
+    
+    
+    # return 1.0
     logger = CSVLogger(save_dir = 'results', name = 'database')
     tracker = OptimalMetric('minimize', 'val_nme')
     pruner = AutoMeshPruning(trial, 'val_nme')
@@ -78,7 +79,7 @@ def heatmap_regressor(trial: Trial):
         accelerator = 'gpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
-        max_epochs = 500,
+        max_epochs = 100,
         logger = logger,
         callbacks = [
             tracker, 
@@ -94,31 +95,35 @@ def heatmap_regressor(trial: Trial):
 
 if __name__ == '__main__':
 
-    # db_name = 'database.db'
-    # db = sqlite3.connect(db_name)
+    db_name = 'database.db'
+    db = sqlite3.connect(db_name)
 
-    # study = create_study(
-    #     #study_name= 'test_4',
-    #     direction = 'minimize',
-    #     # sampler = samplers.RandomSampler(),
-    #     pruner = pruners.HyperbandPruner(),
-    #     storage = f'sqlite:///{db_name}')
+    study = create_study(
+        #study_name= 'test_4',
+        direction = 'minimize',
+        # sampler = samplers.RandomSampler(),
+        pruner = pruners.HyperbandPruner(),
+        storage = f'sqlite:///{db_name}')
 
-    # study.optimize(heatmap_regressor, n_trials = 500)
+    study.optimize(heatmap_regressor, n_trials = 500)
     
-    trial =FixedTrial({'act': 'ReLU',
-                       'add_self_loops': False,
-                       'concat': False,
-                       'conv_layer': 'GATConv',
-                       'dropout': 0.0012250542474682713,
-                       'heads': 2,
-                       'hidden_channels': 170,
-                       'loss_func': 'JaccardLoss',
-                       'lr': 0.00031583021936346486,
-                       'norm': 'GraphNorm',
-                       'num_layers': 8,
-                       'opt': 'Adam',
-                       'weight_decay': 0.0})
-    heatmap_regressor(trial)
+    # trial =FixedTrial({'act': 'ReLU',
+    #                    'add_self_loops': False,
+    #                    'concat': False,
+    #                    'conv_layer': 'GATConv',
+    #                    'dropout': 0.0012250542474682713,
+    #                    'heads': 2,
+    #                    'hidden_channels': 170,
+    #                    'loss_func': 'JaccardLoss',
+    #                    'lr': 0.00031583021936346486,
+    #                    'norm': 'GraphNorm',
+    #                    'num_layers': 8,
+    #                    'opt': 'Adam',
+    #                    'weight_decay': 0.0})
+    # heatmap_regressor(trial)
+    
+    # study = create_study(direction = 'minimize')
+
+    # study.optimize(heatmap_regressor, n_trials = 3)
 
 

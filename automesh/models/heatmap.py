@@ -16,8 +16,8 @@ class HeatMapRegressor(LightningModule):
     """
     def __init__(
             self,
-            base: nn.Module,
-            base_kwargs: Dict[str, Any],
+            model: nn.Module,
+            model_kwargs: Dict[str, Any],
             opt: Optimizer,
             opt_kwargs: Dict[str, Any],
             loss_func: nn.Module,
@@ -25,7 +25,7 @@ class HeatMapRegressor(LightningModule):
         super().__init__()
 
         ## constructing graph neural network
-        self.base = base(**base_kwargs)
+        self.model = model(**model_kwargs)
         self.opt = opt
         self.opt_kwargs = opt_kwargs
         self.loss_func = loss_func(**loss_func_kwargs)
@@ -42,12 +42,12 @@ class HeatMapRegressor(LightningModule):
     def forward(self, x: Union[Data, Batch]) -> torch.tensor:
         ## use edge attributes in forward pass if they exist
         if x.edge_attr != None:
-            return self.base(x.pos, x.edge_index, x.edge_attr)
+            return self.model(x.pos, x.edge_index, x.edge_attr)
         else:
-            return self.base(x.pos, x.edge_index)
+            return self.model(x.pos, x.edge_index)
 
     def configure_optimizers(self):
-        return self.opt(self.base.parameters(), **self.opt_kwargs)
+        return self.opt(self.model.parameters(), **self.opt_kwargs)
 
     def landmark_loss(self, y_hat, y) -> torch.tensor:
         ## compute landmark loss on each channel

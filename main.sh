@@ -9,7 +9,7 @@
 #SBATCH --output=singleTrial.out
 #SBATCH --mail-user=paul.zimmer@zib.de
 
-export NCCL_DEBUG=INFO
+export CUDA_LAUNCH_BLOCKING=1
 
 source /scratch/htc/pzimmer/miniconda3/bin/activate automesh2
 srun python /scratch/htc/pzimmer/AutoMesh/scripts/main.py
