@@ -32,13 +32,6 @@ from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 from automesh.callbacks import OptimalMetric, AutoMeshPruning
 from automesh.config.param_selector import Selector
 
-
-from torch.nn import ReLU
-from torch_geometric.nn import GATConv
-from torch.optim import Adam
-
-
-
 def heatmap_regressor(trial: Trial):
     seed_everything(42)
     
@@ -55,8 +48,7 @@ def heatmap_regressor(trial: Trial):
         train_dataset = train,
         val_dataset = val,
         batch_size = batch_size,
-        num_workers = 4)
-
+        num_workers = 2)
 
     selector = Selector(trial, ['model', 'loss_func', 'opt'])
     pprint.pprint(selector.params())
@@ -65,20 +57,17 @@ def heatmap_regressor(trial: Trial):
     if 'norm' in params['model_kwargs'].keys():
         params['model_kwargs']['norm'] = params['model_kwargs']['norm'](params['model_kwargs']['hidden_channels'])
         
-    model = HeatMapRegressor(**selector.params())
-    # print(model)
+    model = HeatMapRegressor(**selector.params())    
     
-    
-    # return 1.0
     logger = CSVLogger(save_dir = 'results', name = 'database')
     tracker = OptimalMetric('minimize', 'val_nme')
     pruner = AutoMeshPruning(trial, 'val_nme')
 
     trainer = Trainer(
         num_sanity_val_steps=0,
-        accelerator = 'gpu',
+        accelerator = 'cpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
-        devices = 4,
+        devices = 2,
         max_epochs = 100,
         logger = logger,
         callbacks = [
@@ -99,31 +88,9 @@ if __name__ == '__main__':
     db = sqlite3.connect(db_name)
 
     study = create_study(
-        #study_name= 'test_4',
         direction = 'minimize',
-        # sampler = samplers.RandomSampler(),
-        pruner = pruners.HyperbandPruner(),
+        sampler = samplers.RandomSampler(),
+        pruner = pruners.MedianPruner(),
         storage = f'sqlite:///{db_name}')
 
-    study.optimize(heatmap_regressor, n_trials = 500)
-    
-    # trial =FixedTrial({'act': 'ReLU',
-    #                    'add_self_loops': False,
-    #                    'concat': False,
-    #                    'conv_layer': 'GATConv',
-    #                    'dropout': 0.0012250542474682713,
-    #                    'heads': 2,
-    #                    'hidden_channels': 170,
-    #                    'loss_func': 'JaccardLoss',
-    #                    'lr': 0.00031583021936346486,
-    #                    'norm': 'GraphNorm',
-    #                    'num_layers': 8,
-    #                    'opt': 'Adam',
-    #                    'weight_decay': 0.0})
-    # heatmap_regressor(trial)
-    
-    # study = create_study(direction = 'minimize')
-
-    # study.optimize(heatmap_regressor, n_trials = 3)
-
-
+    study.optimize(heatmap_regressor, n_trials = 10)

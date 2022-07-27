@@ -2,6 +2,21 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 
+class ChannelWiseLoss(nn.Module):
+    def __init__(self, loss_func: nn.Module):
+        super().__init__()
+        self.loss_func = loss_func
+
+    def forward(self, y_hat: Tensor, y: Tensor):
+
+        assert y_hat.shape == y.shape
+        
+        loss = 0.0
+        for c in range(y_hat.shape[1]):
+            loss += self.loss_func(y_hat[:, c], y[:, c])
+
+        return loss
+
 ## adapted from:
 # https://github.com/elliottzheng/AdaptiveWingLoss/blob/master/adaptive_wing_loss.py
 class AdaptiveWingLoss(nn.Module):

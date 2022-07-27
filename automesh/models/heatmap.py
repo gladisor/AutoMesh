@@ -6,9 +6,9 @@ import torch.nn as nn
 from torch.optim import Optimizer
 from torch_geometric.data import Data, Batch
 from pytorch_lightning import LightningModule
-import yaml
 
 from automesh.metric import NormalizedMeanError
+from automesh.loss import ChannelWiseLoss
 
 class HeatMapRegressor(LightningModule):
     """
@@ -28,7 +28,7 @@ class HeatMapRegressor(LightningModule):
         self.model = model(**model_kwargs)
         self.opt = opt
         self.opt_kwargs = opt_kwargs
-        self.loss_func = loss_func(**loss_func_kwargs)
+        self.loss_func = ChannelWiseLoss(loss_func(**loss_func_kwargs))
         self.nme = NormalizedMeanError()
 
         ## saving state
@@ -49,17 +49,9 @@ class HeatMapRegressor(LightningModule):
     def configure_optimizers(self):
         return self.opt(self.model.parameters(), **self.opt_kwargs)
 
-    def landmark_loss(self, y_hat, y) -> torch.tensor:
-        ## compute landmark loss on each channel
-        loss = 0.0
-        for c in range(y_hat.shape[1]):
-            loss += self.loss_func(y_hat[:, c], y[:, c])
-
-        return loss
-
     def training_step(self, batch: Batch, batch_idx) -> torch.tensor:
         ## compute landmark loss on each channel
-        loss = self.landmark_loss(self(batch), batch.y)
+        loss = self.loss_func(self(batch), batch.y)
 
         self.log(
             'train_loss', 
@@ -68,6 +60,7 @@ class HeatMapRegressor(LightningModule):
             on_step=False,
             on_epoch=True, 
             sync_dist = True)
+
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -80,7 +73,7 @@ class HeatMapRegressor(LightningModule):
             self.nme.update(pred_points, true_points)
 
         ## compute loss on validation batch as well
-        val_loss = self.landmark_loss(self(batch), batch.y)
+        val_loss = self.loss_func(self(batch), batch.y)
 
         self.log(
             'val_nme',
@@ -99,6 +92,3 @@ class HeatMapRegressor(LightningModule):
             )
 
         return {'val_nme': self.nme, 'val_loss': val_loss}
-    
-    def on_validation_epoch_end(self) -> None:
-        return 
