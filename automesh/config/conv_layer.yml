@@ -1,32 +1,29 @@
-GATConv:
-  obj: !!python/name:torch_geometric.nn.conv.gat_conv.GATConv ''
+RGATConv:
+  obj: !!python/name:torch_geometric.nn.conv.rgat_conv.RGATConv ''
   params:
-    add_self_loops:
-    - true
-    - false
-    concat:
-    - false
-    dropout: !!python/tuple
-    - 0.0
-    - 0.5
-    heads: !!python/tuple
+    concat: basic
+    dropout: basic
+    heads: basic
+    num_bases: !!python/tuple
     - 1
-    - 8
-GCNConv:
-  obj: !!python/name:torch_geometric.nn.conv.gcn_conv.GCNConv ''
-  params:
-    add_self_loops:
-    - true
-    - false
-    improved:
-    - true
-    - false
-    normalize:
-    - true
-    - false
-SAGEConv:
-  obj: !!python/name:torch_geometric.nn.conv.sage_conv.SAGEConv ''
-  params:
-    normalize:
-    - true
-    - false
+    - 3
+    num_blocks: !!python/tuple
+    - 1
+    - 3
+    mod:
+    - additive
+    - scaled
+    - f-additive
+    - f-scaled
+    - null
+    attention_mechanism:
+    - within-relation
+    - across-relation
+    attention_mode:
+    - additive-self-attention
+    - multiplicative-self-attention
+    dim: !!python/tuple
+    - 1
+    - 10
+
+

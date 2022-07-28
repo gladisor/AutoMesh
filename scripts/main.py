@@ -69,7 +69,7 @@ def heatmap_regressor(trial: Trial):
 
     trainer = Trainer(
         num_sanity_val_steps=0,
-        accelerator = 'gpu',
+        accelerator = 'cpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
         max_epochs = 100,
@@ -88,31 +88,36 @@ def heatmap_regressor(trial: Trial):
 
 if __name__ == '__main__':
 
-    # db_name = 'database.db'
-    # db = sqlite3.connect(db_name)
+    db_name = 'database.db'
+    db = sqlite3.connect(db_name)
 
-    # study = create_study(
-    #     direction = 'minimize',
-    #     sampler = samplers.RandomSampler(),
-    #     pruner = pruners.MedianPruner(),
-    #     storage = f'sqlite:///{db_name}')
+    study = create_study(
+        direction = 'minimize',
+        sampler = samplers.TPESampler(),
+        storage = f'sqlite:///{db_name}')
 
-    # study.optimize(heatmap_regressor, n_trials = 1)
+    study.optimize(heatmap_regressor, n_trials = 100)
 
-    trial = FixedTrial({
-        'loss_func': 'FocalLoss',
-        'alpha_f': 0.8,
-        'gamma_f': 2.0,
-        'model': 'GAT',
-        'act': 'GELU',
-        'dropout': 0.0,
-        'hidden_channels': 256,
-        'in_channels': 3,
-        'norm': 'GraphNorm',
-        'num_layers': 4,
-        'out_channels': 8,
-        'opt': 'Adam',
-        'lr': 0.0005,
-    })
+    # trial = FixedTrial({
+    #     ## model
+    #     'model': 'GAT',
+    #     'act': 'GELU',
+    #     'dropout': 0.0,
+    #     'heads': 1,
+    #     'in_channels': 3,
+    #     'hidden_channels': 256,
+    #     'num_layers': 4,
+    #     'out_channels': 8,
+    #     'norm': 'GraphNorm',
 
-    heatmap_regressor(trial)
+    #     ## loss
+    #     'loss_func': 'FocalLoss',
+    #     'alpha_f': 0.8,
+    #     'gamma_f': 2.0,
+        
+    #     ## optimizer
+    #     'opt': 'Adam',
+    #     'lr': 0.0005,
+    # })
+
+    # heatmap_regressor(trial)
