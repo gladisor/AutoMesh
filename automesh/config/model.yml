@@ -1,15 +1,15 @@
-GraphUNet:
-  obj: !!python/name:torch_geometric.nn.models.graph_unet.GraphUNet ''
-  params:
-    depth: !!python/tuple
-    - 3
-    - 6
-    hidden_channels: basic
-    in_channels: basic
-    out_channels: basic
-    pool_ratios: !!python/tuple
-    - 0.5
-    - 0.9
+# GraphUNet:
+#   obj: !!python/name:torch_geometric.nn.models.graph_unet.GraphUNet ''
+#   params:
+#     depth: !!python/tuple
+#     - 3
+#     - 6
+#     hidden_channels: basic
+#     in_channels: basic
+#     out_channels: basic
+#     pool_ratios: !!python/tuple
+#     - 0.5
+    # - 0.9
 ParamGCN:
   obj: !!python/name:automesh.models.architectures.ParamGCN ''
   params:

@@ -11,6 +11,7 @@ import torch.nn as nn
 import torch_geometric.transforms as T
 from torch_geometric.data import LightningDataset
 from torch_geometric.nn import GraphNorm, SAGEConv
+#from torch_geometric.transforms.add_positional_encoding import AddRandomWalkPE
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.plugins import DDPSpawnPlugin
 from pytorch_lightning.loggers import CSVLogger
@@ -28,7 +29,7 @@ from automesh.models.architectures import ParamGCN
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
 from automesh.loss import FocalLoss, JaccardLoss
-from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
+from automesh.data.transforms import preprocess_pipeline, rotation_pipeline, AutoMeshVirtualNode
 from automesh.callbacks import OptimalMetric, AutoMeshPruning
 from automesh.config.param_selector import Selector
 
@@ -43,12 +44,16 @@ def heatmap_regressor(trial: Trial):
     seed_everything(42)
     
     transform = T.Compose([
-        preprocess_pipeline(), 
+        preprocess_pipeline(),
         rotation_pipeline(degrees=50),
+        T.GenerateMeshNormals(),
+        T.PointPairFeatures(),
+        AutoMeshVirtualNode()
         ])
 
-    train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
-    val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
+    train = LeftAtriumHeatMapData(root = 'data/GRIPS22/trainone', sigma = 2.0, transform = transform, )
+    val = LeftAtriumHeatMapData(root = 'data/GRIPS22/valone', sigma = 2.0, transform = transform)
+    
 
     batch_size = 1
     data = LightningDataset(
@@ -69,7 +74,7 @@ def heatmap_regressor(trial: Trial):
     # print(model)
     
     
-    # return 1.0
+    
     logger = CSVLogger(save_dir = 'results', name = 'database')
     tracker = OptimalMetric('minimize', 'val_nme')
     pruner = AutoMeshPruning(trial, 'val_nme')
@@ -108,18 +113,18 @@ if __name__ == '__main__':
     study.optimize(heatmap_regressor, n_trials = 500)
     
     # trial =FixedTrial({'act': 'ReLU',
-    #                    'add_self_loops': False,
-    #                    'concat': False,
-    #                    'conv_layer': 'GATConv',
-    #                    'dropout': 0.0012250542474682713,
-    #                    'heads': 2,
-    #                    'hidden_channels': 170,
-    #                    'loss_func': 'JaccardLoss',
-    #                    'lr': 0.00031583021936346486,
-    #                    'norm': 'GraphNorm',
-    #                    'num_layers': 8,
-    #                    'opt': 'Adam',
-    #                    'weight_decay': 0.0})
+    #                     'add_self_loops': False,
+    #                     'concat': False,
+    #                     'conv_layer': 'GATConv',
+    #                     'dropout': 0.0012250542474682713,
+    #                     'heads': 2,
+    #                     'hidden_channels': 170,
+    #                     'loss_func': 'JaccardLoss',
+    #                     'lr': 0.00031583021936346486,
+    #                     'norm': 'GraphNorm',
+    #                     'num_layers': 8,
+    #                     'opt': 'Adam',
+    #                     'weight_decay': 0.0})
     # heatmap_regressor(trial)
     
     # study = create_study(direction = 'minimize')

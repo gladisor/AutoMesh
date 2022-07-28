@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --time=23:59:59
 #SBATCH --job-name automesh_db
-#SBATCH --output=singleTrial.out
+#SBATCH --output=log2.out
 #SBATCH --mail-user=paul.zimmer@zib.de
 
 export CUDA_LAUNCH_BLOCKING=1

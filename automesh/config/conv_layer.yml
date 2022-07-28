@@ -12,21 +12,24 @@ GATConv:
     heads: !!python/tuple
     - 1
     - 8
-GCNConv:
-  obj: !!python/name:torch_geometric.nn.conv.gcn_conv.GCNConv ''
-  params:
-    add_self_loops:
-    - true
-    - false
-    improved:
-    - true
-    - false
-    normalize:
-    - true
-    - false
-SAGEConv:
-  obj: !!python/name:torch_geometric.nn.conv.sage_conv.SAGEConv ''
-  params:
-    normalize:
-    - true
-    - false
+    edge_dim:
+    - 4
+# GCNConv:
+#   obj: !!python/name:torch_geometric.nn.conv.gcn_conv.GCNConv ''
+#   params:
+#     add_self_loops:
+#     - true
+#     - false
+#     improved:
+#     - true
+#     - false
+#     normalize:
+#     - true
+#     - false
+# SAGEConv:
+#   obj: !!python/name:torch_geometric.nn.conv.sage_conv.SAGEConv ''
+#   params:
+#     normalize:
+#     - true
+#     - false
+    

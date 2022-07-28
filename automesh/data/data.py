@@ -4,6 +4,7 @@ from pathlib import Path
 import os
 import sys
 from automesh.models.heatmap import HeatMapRegressor
+import torch_geometric.transforms as T
 
 import open3d as o3d
 import numpy as np
@@ -117,18 +118,19 @@ class LeftAtriumData(Dataset):
         o3d.visualization.draw_geometries([mesh])
 
 class LeftAtriumHeatMapData(LeftAtriumData):
-    def __init__(self, root: str, sigma: float = 1.0, **kwargs) -> None:
+    def __init__(self, root: str, sigma: float = 1.0,  **kwargs) -> None:
 
         super().__init__(root, **kwargs)
         self.sigma = sigma
-
+        
+            
     def process(self) -> None:
         return super().process()
 
     def get(self, idx: int) -> Data:
         data = super().get(idx)
-        branch_points = data.pos[data.y]
-        D = distance.cdist(data.pos, branch_points)
+        branch_points = data.x[data.y]
+        D = distance.cdist(data.x, branch_points)
         H = np.exp(- np.power(D, 2) / (2 * self.sigma ** 2))
         data.y = torch.tensor(H, dtype = torch.float32)
         return data
