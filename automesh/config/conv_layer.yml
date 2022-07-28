@@ -1,6 +1,7 @@
 TransformerConv:
   obj: !!python/name:torch_geometric.nn.conv.transformer_conv.TransformerConv ''
   params:
+    edge_dim: basic
     heads: basic
     concat: basic
     beta:
