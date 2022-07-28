@@ -1,25 +1,9 @@
-RGATConv:
-  obj: !!python/name:torch_geometric.nn.conv.rgat_conv.RGATConv ''
+TransformerConv:
+  obj: !!python/name:torch_geometric.nn.conv.transformer_conv.TransformerConv ''
   params:
-    concat: basic
     heads: basic
-    num_relations: !!python/tuple
-    - 1
-    - 5
-    num_bases: !!python/tuple
-    - 1
-    - 3
-    num_blocks: !!python/tuple
-    - 1
-    - 3
-    mod:
-    - additive
-    - scaled
-    - f-additive
-    - f-scaled
-    - null
-    attention_mechanism:
-    - within-relation
-    - across-relation
-
+    concat: basic
+    beta:
+    - true
+    - false
 
