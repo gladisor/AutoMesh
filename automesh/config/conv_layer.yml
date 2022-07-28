@@ -4,6 +4,9 @@ RGATConv:
     concat: basic
     dropout: basic
     heads: basic
+    num_relations: !!python/tuple
+    - 1
+    - 5
     num_bases: !!python/tuple
     - 1
     - 3
