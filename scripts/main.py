@@ -69,7 +69,7 @@ def heatmap_regressor(trial: Trial):
 
     trainer = Trainer(
         num_sanity_val_steps=0,
-        accelerator = 'cpu',
+        accelerator = 'gpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
         max_epochs = 100,
