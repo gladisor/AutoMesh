@@ -7,10 +7,13 @@ AdaptiveWingLoss:
     theta: !!python/tuple
     - 0.2
     - 0.8
+
 BCEDiceLoss:
   obj: !!python/name:automesh.loss.BCEDiceLoss ''
+
 DiceLoss:
   obj: !!python/name:automesh.loss.DiceLoss ''
+
 FocalLoss:
   obj: !!python/name:automesh.loss.FocalLoss ''
   params:
@@ -20,14 +23,17 @@ FocalLoss:
     gamma_f: !!python/tuple
     - 0.0
     - 5.0
+
 FocalTverskyLoss:
   obj: !!python/name:automesh.loss.FocalTverskyLoss ''
   params:
     gamma_ft: !!python/tuple
     - 1.0
     - 3.0
+
 JaccardLoss:
   obj: !!python/name:automesh.loss.JaccardLoss ''
+
 TverskyLoss:
   obj: !!python/name:automesh.loss.TverskyLoss ''
   params:
