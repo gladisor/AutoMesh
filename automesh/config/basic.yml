@@ -33,3 +33,9 @@ pool_ratios: !!python/tuple
 heads: !!python/tuple
 - 1
 - 8
+
+jk:
+- last
+- cat
+- max
+- null

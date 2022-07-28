@@ -55,7 +55,7 @@ def heatmap_regressor(trial: Trial):
     selector = Selector(trial, ['model', 'loss_func', 'opt'])
     params = selector.params()
 
-    pprint(selector.params())
+    # pprint(selector.params())
     
     if 'norm' in params['model_kwargs'].keys():
         params['model_kwargs']['norm'] = params['model_kwargs']['norm'](params['model_kwargs']['hidden_channels'])
@@ -69,7 +69,7 @@ def heatmap_regressor(trial: Trial):
 
     trainer = Trainer(
         num_sanity_val_steps=0,
-        accelerator = 'gpu',
+        accelerator = 'cpu',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
         max_epochs = 100,

@@ -8,3 +8,9 @@ TransformerConv:
     - true
     - false
 
+PDNConv:
+  obj: !!python/name:torch_geometric.nn.conv.pdn_conv.PDNConv ''
+  params:
+    edge_dim: basic
+    ## also has hidden_channels but for edge features. this will use the same
+    hidden_channels: basic
