@@ -55,7 +55,7 @@ def heatmap_regressor(trial: Trial):
     selector = Selector(trial, ['model', 'loss_func', 'opt'])
     params = selector.params()
 
-    # pprint(selector.params())
+    pprint(selector.params())
     
     if 'norm' in params['model_kwargs'].keys():
         params['model_kwargs']['norm'] = params['model_kwargs']['norm'](params['model_kwargs']['hidden_channels'])
@@ -63,7 +63,7 @@ def heatmap_regressor(trial: Trial):
         
     model = HeatMapRegressor(**selector.params())
     
-    logger = CSVLogger(save_dir = 'results', name = 'database')
+    # logger = CSVLogger(save_dir = 'results', name = 'database')
     tracker = OptimalMetric('minimize', 'val_nme')
     pruner = AutoMeshPruning(trial, 'val_nme')
 
@@ -73,7 +73,7 @@ def heatmap_regressor(trial: Trial):
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
         max_epochs = 100,
-        logger = logger,
+        # logger = logger,
         callbacks = [
             tracker, 
             pruner
@@ -93,11 +93,12 @@ if __name__ == '__main__':
 
     study = create_study(
         direction = 'minimize',
-        sampler = samplers.TPESampler(),
+        sampler = samplers.TPESampler(n_startup_trials = 50),
         storage = f'sqlite:///{db_name}')
 
-    study.optimize(heatmap_regressor, n_trials = 100)
+    study.optimize(heatmap_regressor, n_trials = 200)
 
+    ## For evaluating a fixed trial
     # trial = FixedTrial({
     #     ## model
     #     'model': 'GAT',
