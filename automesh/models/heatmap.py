@@ -28,8 +28,8 @@ class HeatMapRegressor(LightningModule):
         self.model = model(**model_kwargs)
         self.opt = opt
         self.opt_kwargs = opt_kwargs
-        # self.loss_func = ChannelWiseLoss(loss_func(**loss_func_kwargs))
-        self.loss_func = loss_func(**loss_func_kwargs)
+        self.loss_func = ChannelWiseLoss(loss_func(**loss_func_kwargs))
+        # self.loss_func = loss_func(**loss_func_kwargs)
         self.nme = NormalizedMeanError()
 
         ## saving state
@@ -51,11 +51,14 @@ class HeatMapRegressor(LightningModule):
         return self.opt(self.model.parameters(), **self.opt_kwargs)
 
     def landmark_loss(self, y_hat: torch.Tensor, y: torch.Tensor):
-        assert y_hat.shape == y.shape
+
+        loss = self.loss_func(y_hat, y)
+        
+        # assert y_hat.shape == y.shape
                 
-        loss = 0.0
-        for c in range(y_hat.shape[1]):
-            loss += self.loss_func(y_hat[:, c], y[:, c])
+        # loss = 0.0
+        # for c in range(y_hat.shape[1]):
+        #     loss += self.loss_func(y_hat[:, c], y[:, c])
 
         return loss
 
