@@ -2,7 +2,6 @@ RGATConv:
   obj: !!python/name:torch_geometric.nn.conv.rgat_conv.RGATConv ''
   params:
     concat: basic
-    dropout: basic
     heads: basic
     num_relations: !!python/tuple
     - 1
