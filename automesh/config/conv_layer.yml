@@ -21,8 +21,5 @@ RGATConv:
     attention_mechanism:
     - within-relation
     - across-relation
-    dim: !!python/tuple
-    - 1
-    - 10
 
 
