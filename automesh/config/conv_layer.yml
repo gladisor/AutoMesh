@@ -21,9 +21,6 @@ RGATConv:
     attention_mechanism:
     - within-relation
     - across-relation
-    attention_mode:
-    - additive-self-attention
-    - multiplicative-self-attention
     dim: !!python/tuple
     - 1
     - 10
