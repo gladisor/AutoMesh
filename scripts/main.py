@@ -82,7 +82,10 @@ def heatmap_regressor(trial: Trial):
             pruner
         ])
 
-    trainer.fit(model, data)
+    try:
+        trainer.fit(model, data)
+    except Exception:
+        pass
 
     if trainer.callback_metrics['pruned']:
         raise TrialPruned()
@@ -96,11 +99,11 @@ if __name__ == '__main__':
 
     study = create_study(
         direction = 'minimize',
-        sampler = samplers.TPESampler(n_startup_trials = 5),
+        sampler = samplers.TPESampler(n_startup_trials = 50),
         pruner = pruners.MedianPruner(n_startup_trials = 5, n_warmup_steps = 10),
         storage = f'sqlite:///{db_name}')
 
-    study.optimize(heatmap_regressor, n_trials = 300)
+    study.optimize(heatmap_regressor, n_trials = 500)
 
     # # For evaluating a fixed trial
     # trial = FixedTrial({
