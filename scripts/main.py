@@ -97,7 +97,7 @@ if __name__ == '__main__':
     study = create_study(
         direction = 'minimize',
         sampler = samplers.TPESampler(n_startup_trials = 50),
-        pruning = pruners.MedianPruner(n_startup_trials = 5, n_warmup_steps = 10),
+        pruner = pruners.MedianPruner(n_startup_trials = 5, n_warmup_steps = 10),
         storage = f'sqlite:///{db_name}')
 
     study.optimize(heatmap_regressor, n_trials = 300)
