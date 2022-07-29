@@ -42,10 +42,25 @@ class HeatMapRegressor(LightningModule):
 
     def forward(self, x: Union[Data, Batch]) -> torch.tensor:
         ## use edge attributes in forward pass if they exist
+        # if x.edge_attr != None:
+        #     return self.model(x.pos, x.edge_index, x.edge_attr)
+        # else:
+        #     return self.model(x.pos, x.edge_index)
+
+        x_pos = x.pos.clone()
+        x_edge_index = x.edge_index.clone()
+
+        has_edge_attr = False
         if x.edge_attr != None:
-            return self.model(x.pos, x.edge_index, x.edge_attr)
+            has_edge_attr = True
+            x_edge_attr = x.edge_attr.clone()
+
+        del x
+
+        if has_edge_attr:
+            return self.model(x_pos, x_edge_index, x_edge_attr)
         else:
-            return self.model(x.pos, x.edge_index)
+            return self.model(x_pos, x_edge_index)
 
     def configure_optimizers(self):
         return self.opt(self.model.parameters(), **self.opt_kwargs)

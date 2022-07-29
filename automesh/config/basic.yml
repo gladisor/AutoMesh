@@ -1,25 +1,32 @@
 ## defaults
 in_channels: 3
 out_channels: 8
-
 edge_dim: 4
 concat: false
 
 ## ranges
-hidden_channels: !!python/tuple
+hidden_channels:
 - 32
-- 256
+- 64
+- 128
+# - 256
+# - 512
+# - 1024
 
 num_layers: !!python/tuple
-- 3
-- 8
+- 2
+- 5
 
 lr: !!python/tuple
 - 1.0e-05
 - 0.001
 
-dropout: !!python/tuple
+dropout:
 - 0.0
+- 0.1
+- 0.2
+- 0.3
+- 0.4
 - 0.5
 
 depth: !!python/tuple
@@ -32,10 +39,12 @@ pool_ratios: !!python/tuple
 
 heads: !!python/tuple
 - 1
-- 8
+- 5
 
-jk:
-- last
-- cat
-- max
-- null
+K: !!python/tuple
+- 1
+- 4
+
+add_self_loops:
+- true
+- false

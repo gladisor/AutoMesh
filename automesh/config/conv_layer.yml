@@ -1,16 +1,43 @@
-TransformerConv:
-  obj: !!python/name:torch_geometric.nn.conv.transformer_conv.TransformerConv ''
+TAGConv:
+  obj: !!python/name:torch_geometric.nn.conv.tag_conv.TAGConv ''
   params:
-    edge_dim: basic
-    heads: basic
-    concat: basic
-    beta:
-    - true
-    - false
+    K: basic
 
-PDNConv:
-  obj: !!python/name:torch_geometric.nn.conv.pdn_conv.PDNConv ''
+SGConv:
+  obj: !!python/name:torch_geometric.nn.conv.sg_conv.SGConv ''
   params:
-    edge_dim: basic
-    ## also has hidden_channels but for edge features. this will use the same
-    hidden_channels: basic
+    K: basic
+    add_self_loops: basic
+
+SAGEConv:
+  obj: !!python/name:torch_geometric.nn.conv.sage_conv.SAGEConv ''
+  params:
+    aggr:
+      - mean
+      - max
+      - lstm
+    normalize:
+      - true
+      - false
+    root_weight:
+      - true
+      - false
+
+# TransformerConv: 
+#   obj: !!python/name:torch_geometric.nn.conv.transformer_conv.TransformerConv ''
+#   params:
+#     edge_dim: basic
+#     heads: basic
+#     concat: basic
+#     beta:
+#     - true
+#     - false
+
+# PDNConv:
+#   obj: !!python/name:torch_geometric.nn.conv.pdn_conv.PDNConv ''
+#   params:
+#     edge_dim: basic
+#     ## also has hidden_channels but for edge features. this will use the same
+#     hidden_channels: basic
+
+# class SplineConv

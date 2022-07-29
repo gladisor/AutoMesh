@@ -9,6 +9,9 @@ from pprint import pprint
 ## third party
 import torch
 import torch.nn as nn
+
+torch.multiprocessing.set_sharing_strategy('file_system')
+
 import torch_geometric.transforms as T
 from torch_geometric.data import LightningDataset
 from torch_geometric.nn import GraphNorm, GraphSAGE, GraphUNet
@@ -38,13 +41,11 @@ def heatmap_regressor(trial: Trial):
     transform = T.Compose([
         preprocess_pipeline(), 
         rotation_pipeline(degrees=50),
-        T.GenerateMeshNormals(),
-        T.PointPairFeatures()
         ])
 
     train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
     val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
-
+    
     batch_size = 1
     data = LightningDataset(
         train_dataset = train,
@@ -63,17 +64,19 @@ def heatmap_regressor(trial: Trial):
         
     model = HeatMapRegressor(**selector.params())
     
-    # logger = CSVLogger(save_dir = 'results', name = 'database')
+    ## callbacks
     tracker = OptimalMetric('minimize', 'val_nme')
     pruner = AutoMeshPruning(trial, 'val_nme')
 
+    logger = CSVLogger(save_dir = 'results', name = 'data')
+
     trainer = Trainer(
         num_sanity_val_steps=0,
-        accelerator = 'gpu',
+        accelerator = 'auto',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
         max_epochs = 100,
-        # logger = logger,
+        logger = logger,
         callbacks = [
             tracker, 
             pruner
@@ -98,7 +101,7 @@ if __name__ == '__main__':
 
     study.optimize(heatmap_regressor, n_trials = 200)
 
-    ## For evaluating a fixed trial
+    # # For evaluating a fixed trial
     # trial = FixedTrial({
     #     ## model
     #     'model': 'GAT',

@@ -9,7 +9,7 @@ class ChannelWiseLoss(nn.Module):
 
     def forward(self, y_hat: Tensor, y: Tensor):
         assert y_hat.shape == y.shape
-                
+        
         loss = 0.0
         for c in range(y_hat.shape[1]):
             loss += self.loss_func(y_hat[:, c], y[:, c])
