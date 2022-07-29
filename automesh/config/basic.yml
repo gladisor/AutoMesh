@@ -9,13 +9,13 @@ hidden_channels:
 - 32
 - 64
 - 128
-# - 256
-# - 512
-# - 1024
+- 256
+- 512
+- 1024
 
 num_layers: !!python/tuple
 - 2
-- 5
+- 20
 
 lr: !!python/tuple
 - 1.0e-05
