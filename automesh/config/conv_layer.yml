@@ -1,13 +1,13 @@
-TAGConv:
-  obj: !!python/name:torch_geometric.nn.conv.tag_conv.TAGConv ''
-  params:
-    K: basic
+# TAGConv:
+#   obj: !!python/name:torch_geometric.nn.conv.tag_conv.TAGConv ''
+#   params:
+#     K: basic
 
-SGConv:
-  obj: !!python/name:torch_geometric.nn.conv.sg_conv.SGConv ''
-  params:
-    K: basic
-    add_self_loops: basic
+# SGConv:
+#   obj: !!python/name:torch_geometric.nn.conv.sg_conv.SGConv ''
+#   params:
+#     K: basic
+#     add_self_loops: basic
 
 SAGEConv:
   obj: !!python/name:torch_geometric.nn.conv.sage_conv.SAGEConv ''
@@ -15,7 +15,6 @@ SAGEConv:
     aggr:
       - mean
       - max
-      - lstm
     normalize:
       - true
       - false

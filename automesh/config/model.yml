@@ -5,8 +5,8 @@ ParamGCN:
     hidden_channels: basic
     num_layers: basic
     out_channels: basic
-    # jk: basic
-
+    dropout: basic
+    
     conv_layer: not_basic
     act: not_basic
     norm: not_basic

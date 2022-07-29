@@ -29,7 +29,6 @@ class HeatMapRegressor(LightningModule):
         self.opt = opt
         self.opt_kwargs = opt_kwargs
         self.loss_func = ChannelWiseLoss(loss_func(**loss_func_kwargs))
-        # self.loss_func = loss_func(**loss_func_kwargs)
         self.nme = NormalizedMeanError()
 
         ## saving state
@@ -42,11 +41,6 @@ class HeatMapRegressor(LightningModule):
 
     def forward(self, x: Union[Data, Batch]) -> torch.tensor:
         ## use edge attributes in forward pass if they exist
-        # if x.edge_attr != None:
-        #     return self.model(x.pos, x.edge_index, x.edge_attr)
-        # else:
-        #     return self.model(x.pos, x.edge_index)
-
         x_pos = x.pos.clone()
         x_edge_index = x.edge_index.clone()
 
