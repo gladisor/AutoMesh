@@ -59,7 +59,16 @@ class HeatMapRegressor(LightningModule):
         if torch.isnan(y).any():
             print('Output of network is nan')
             print(y)
+            print()
+            print('Input to network: ')
+            print('position')
+            print(x_pos)
 
+            print('edges')
+            print(x_edge_index)
+
+            print('edge_attr')
+            print(x_edge_attr)
         return y
 
     def configure_optimizers(self):
