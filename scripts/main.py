@@ -109,6 +109,7 @@ if __name__ == '__main__':
     trial = FixedTrial({
         ## model
         'model': 'ParamGCN',
+        'conv_layer': 'SAGEConv',
         'act': 'ReLU',
         'dropout': 0.5,
         'in_channels': 3,
