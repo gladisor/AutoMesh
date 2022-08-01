@@ -68,7 +68,7 @@ def heatmap_regressor(trial: Trial):
     tracker = OptimalMetric('minimize', 'val_nme')
     pruner = AutoMeshPruning(trial, 'val_nme')
 
-    logger = CSVLogger(save_dir = 'results', name = 'data')
+    logger = CSVLogger(save_dir = 'results', name = 'single')
 
     trainer = Trainer(
         num_sanity_val_steps=0,
