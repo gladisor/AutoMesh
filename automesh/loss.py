@@ -101,9 +101,8 @@ class FocalLoss(nn.Module):
 
     def forward(self, y_hat: Tensor, y: Tensor) -> Tensor:
         print('y_hat is nan: ', torch.isnan(y_hat).any())
-        p = torch.sigmoid(y_hat)
 
-        print('p is nan: ', torch.isnan(p).any())
+        p = torch.sigmoid(y_hat)        
         bce = nn.functional.binary_cross_entropy(p, y, reduction = 'none')
         bce_exp = torch.exp(-bce)
         focal = (self.alpha * (1 - bce_exp) ** self.gamma) * bce
