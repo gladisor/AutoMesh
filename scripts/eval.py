@@ -28,7 +28,6 @@ if __name__ == '__main__':
     ax[1].plot(val['epoch'], val['val_loss'])
     plt.show()
 
-
     # transform = T.Compose([
     #     preprocess_pipeline(), 
     #     rotation_pipeline(degrees=50),

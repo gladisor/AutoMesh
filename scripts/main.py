@@ -68,14 +68,14 @@ def heatmap_regressor(trial: Trial):
     tracker = OptimalMetric('minimize', 'val_nme')
     pruner = AutoMeshPruning(trial, 'val_nme')
 
-    logger = CSVLogger(save_dir = 'results', name = 'single')
+    logger = CSVLogger(save_dir = 'results', name = 'awl')
 
     trainer = Trainer(
         num_sanity_val_steps=0,
         accelerator = 'auto',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
-        max_epochs = 500,
+        max_epochs = 200,
         logger = logger,
         callbacks = [
             tracker, 
@@ -94,47 +94,47 @@ def heatmap_regressor(trial: Trial):
 
 if __name__ == '__main__':
 
-    # db_name = 'database.db'
-    # db = sqlite3.connect(db_name)
+    db_name = 'database.db'
+    db = sqlite3.connect(db_name)
 
-    # study = create_study(
-    #     direction = 'minimize',
-    #     sampler = samplers.TPESampler(n_startup_trials = 50),
-    #     pruner = pruners.MedianPruner(n_startup_trials = 5, n_warmup_steps = 10),
-    #     storage = f'sqlite:///{db_name}')
+    study = create_study(
+        direction = 'minimize',
+        sampler = samplers.TPESampler(n_startup_trials = 50),
+        pruner = pruners.MedianPruner(n_startup_trials = 5, n_warmup_steps = 10),
+        storage = f'sqlite:///{db_name}')
 
-    # study.optimize(heatmap_regressor, n_trials = 500)
+    study.optimize(heatmap_regressor, n_trials = 500)
 
-    ## For evaluating a fixed trial
-    trial = FixedTrial({
-        ## model
-        'model': 'ParamGCN',
-        'conv_layer': 'SAGEConv',
-        'act': 'ReLU',
-        'dropout': 0.5,
-        'in_channels': 3,
-        'hidden_channels': 250,
-        'num_layers': 6,
-        'out_channels': 8,
-        'norm': 'GraphNorm',
-        'normalize': False,
-        'root_weight': True,
-        'aggr': 'mean',
+    # ## For evaluating a fixed trial
+    # trial = FixedTrial({
+    #     ## model
+    #     'model': 'ParamGCN',
+    #     'conv_layer': 'SAGEConv',
+    #     'act': 'ReLU',
+    #     'dropout': 0.5,
+    #     'in_channels': 3,
+    #     'hidden_channels': 250,
+    #     'num_layers': 6,
+    #     'out_channels': 8,
+    #     'norm': 'GraphNorm',
+    #     'normalize': False,
+    #     'root_weight': True,
+    #     'aggr': 'mean',
 
-        ## loss
-        # 'loss_func': 'FocalLoss',
-        # 'alpha_f': 0.6811,
-        # 'gamma_f': 0.81877,
-        'loss_func': 'AdaptiveWingLoss',
-        'omega': 14.0,
-        'theta': 0.5,
-        'epsilon': 1.0,
-        'alpha': 2.1,
+    #     ## loss
+    #     # 'loss_func': 'FocalLoss',
+    #     # 'alpha_f': 0.6811,
+    #     # 'gamma_f': 0.81877,
+    #     'loss_func': 'AdaptiveWingLoss',
+    #     'omega': 14.0,
+    #     'theta': 0.5,
+    #     'epsilon': 1.0,
+    #     'alpha': 2.1,
         
-        ## optimizer
-        'opt': 'Adam',
-        'lr': 0.00047760,
-        'weight_decay': 1e-05
-    })
+    #     ## optimizer
+    #     'opt': 'Adam',
+    #     'lr': 0.00047760,
+    #     'weight_decay': 1e-05
+    # })
 
-    heatmap_regressor(trial)
+    # heatmap_regressor(trial)
