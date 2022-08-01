@@ -119,6 +119,7 @@ if __name__ == '__main__':
         'norm': 'GraphNorm',
         'normalize': False,
         'root_weight': True,
+        'aggr': 'mean',
 
         ## loss
         'loss_func': 'FocalLoss',
