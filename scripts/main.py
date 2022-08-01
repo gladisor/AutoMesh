@@ -117,7 +117,7 @@ if __name__ == '__main__':
         'out_channels': 8,
         'norm': 'GraphNorm',
         'normalize': False,
-        'root_weight': True
+        'root_weight': True,
 
         ## loss
         'loss_func': 'FocalLoss',
