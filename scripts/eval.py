@@ -6,27 +6,44 @@ import pickle
 
 import torch_geometric.transforms as T
 import optuna
+import matplotlib.pyplot as plt
+import pandas as pd
 
 from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 
+
 if __name__ == '__main__':
-    transform = T.Compose([
-        preprocess_pipeline(), 
-        rotation_pipeline(degrees=50),
-        T.GenerateMeshNormals(),
-        T.PointPairFeatures()
-        ])
 
-    val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
+    data = pd.read_csv('results/data/version_0/metrics.csv')
+    val = data[['epoch', 'val_nme', 'val_loss']].dropna()
+    train = data[['epoch', 'train_loss']].dropna()
 
-    model = HeatMapRegressor.load_from_checkpoint('results/database/version_8/checkpoints/epoch=99-step=2200.ckpt')
+    fig, ax = plt.subplots(2, 1)
+    fig.set_size_inches(10, 8)
 
-    for i in range(len(val)):
-        val.visualize_predicted_heat_map(i, model)
-        val.visualize_predicted_points(i, model)
-        val.display(i)
+    ax[0].plot(val['epoch'], val['val_nme'])
+    ax[1].plot(train['epoch'], train['train_loss'])
+    ax[1].plot(val['epoch'], val['val_loss'])
+    plt.show()
+
+
+    # transform = T.Compose([
+    #     preprocess_pipeline(), 
+    #     rotation_pipeline(degrees=50),
+    #     T.GenerateMeshNormals(),
+    #     T.PointPairFeatures()
+    #     ])
+
+    # val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
+
+    # model = HeatMapRegressor.load_from_checkpoint('results/database/version_8/checkpoints/epoch=99-step=2200.ckpt')
+
+    # for i in range(len(val)):
+    #     val.visualize_predicted_heat_map(i, model)
+    #     val.visualize_predicted_points(i, model)
+    #     val.display(i)
 
     # study = pickle.load(open('study.pkl', 'rb'))
     # for trial in study.trials:
