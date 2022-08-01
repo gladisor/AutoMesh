@@ -75,7 +75,7 @@ def heatmap_regressor(trial: Trial):
         accelerator = 'auto',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
-        max_epochs = 150,
+        max_epochs = 500,
         logger = logger,
         callbacks = [
             tracker, 
@@ -87,45 +87,47 @@ def heatmap_regressor(trial: Trial):
     except Exception:
         pass
 
-    if trainer.callback_metrics['pruned']:
+    if trainer.callback_metrics.get('pruned', False):
         raise TrialPruned()
 
     return trainer.callback_metrics[tracker.name]
 
 if __name__ == '__main__':
 
-    db_name = 'database.db'
-    db = sqlite3.connect(db_name)
+    # db_name = 'database.db'
+    # db = sqlite3.connect(db_name)
 
-    study = create_study(
-        direction = 'minimize',
-        sampler = samplers.TPESampler(n_startup_trials = 50),
-        pruner = pruners.MedianPruner(n_startup_trials = 5, n_warmup_steps = 10),
-        storage = f'sqlite:///{db_name}')
+    # study = create_study(
+    #     direction = 'minimize',
+    #     sampler = samplers.TPESampler(n_startup_trials = 50),
+    #     pruner = pruners.MedianPruner(n_startup_trials = 5, n_warmup_steps = 10),
+    #     storage = f'sqlite:///{db_name}')
 
-    study.optimize(heatmap_regressor, n_trials = 500)
+    # study.optimize(heatmap_regressor, n_trials = 500)
 
-    # # For evaluating a fixed trial
-    # trial = FixedTrial({
-    #     ## model
-    #     'model': 'GAT',
-    #     'act': 'GELU',
-    #     'dropout': 0.0,
-    #     'heads': 1,
-    #     'in_channels': 3,
-    #     'hidden_channels': 256,
-    #     'num_layers': 4,
-    #     'out_channels': 8,
-    #     'norm': 'GraphNorm',
+    ## For evaluating a fixed trial
+    trial = FixedTrial({
+        ## model
+        'model': 'ParamGCN',
+        'act': 'ReLU',
+        'dropout': 0.5,
+        'in_channels': 3,
+        'hidden_channels': 250,
+        'num_layers': 6,
+        'out_channels': 8,
+        'norm': 'GraphNorm',
+        'normalize': False,
+        'root_weight': True
 
-    #     ## loss
-    #     'loss_func': 'FocalLoss',
-    #     'alpha_f': 0.8,
-    #     'gamma_f': 2.0,
+        ## loss
+        'loss_func': 'FocalLoss',
+        'alpha_f': 0.6811,
+        'gamma_f': 0.81877,
         
-    #     ## optimizer
-    #     'opt': 'Adam',
-    #     'lr': 0.0005,
-    # })
+        ## optimizer
+        'opt': 'Adam',
+        'lr': 0.00047760,
+        'weight_decay': 1e-05
+    })
 
-    # heatmap_regressor(trial)
+    heatmap_regressor(trial)
