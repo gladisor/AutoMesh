@@ -122,9 +122,14 @@ if __name__ == '__main__':
         'aggr': 'mean',
 
         ## loss
-        'loss_func': 'FocalLoss',
-        'alpha_f': 0.6811,
-        'gamma_f': 0.81877,
+        # 'loss_func': 'FocalLoss',
+        # 'alpha_f': 0.6811,
+        # 'gamma_f': 0.81877,
+        'loss_func': 'AdaptiveWingLoss',
+        'omega': 14.0,
+        'theta': 0.5,
+        'epsilon': 1.0,
+        'alpha': 2.1,
         
         ## optimizer
         'opt': 'Adam',
