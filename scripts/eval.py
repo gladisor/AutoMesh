@@ -16,7 +16,7 @@ from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 
 if __name__ == '__main__':
 
-    data = pd.read_csv('results/data/version_0/metrics.csv')
+    data = pd.read_csv('results/data/version_5/metrics.csv')
     val = data[['epoch', 'val_nme', 'val_loss']].dropna()
     train = data[['epoch', 'train_loss']].dropna()
 
