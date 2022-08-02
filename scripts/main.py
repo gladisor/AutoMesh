@@ -41,6 +41,8 @@ def heatmap_regressor(trial: Trial):
     transform = T.Compose([
         preprocess_pipeline(), 
         rotation_pipeline(degrees=50),
+        T.GenerateMeshNormals(),
+        T.PointPairFeatures(),
         ])
 
     train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
@@ -68,14 +70,14 @@ def heatmap_regressor(trial: Trial):
     tracker = OptimalMetric('minimize', 'val_nme')
     pruner = AutoMeshPruning(trial, 'val_nme')
 
-    logger = CSVLogger(save_dir = 'results', name = 'awl')
+    logger = CSVLogger(save_dir = 'results', name = 'edge_features')
 
     trainer = Trainer(
         num_sanity_val_steps=0,
         accelerator = 'auto',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
-        max_epochs = 200,
+        max_epochs = 100,
         logger = logger,
         callbacks = [
             tracker, 
@@ -99,8 +101,7 @@ if __name__ == '__main__':
 
     study = create_study(
         direction = 'minimize',
-        sampler = samplers.TPESampler(n_startup_trials = 50),
-        pruner = pruners.MedianPruner(n_startup_trials = 5, n_warmup_steps = 10),
+        sampler = samplers.TPESampler(),
         storage = f'sqlite:///{db_name}')
 
     study.optimize(heatmap_regressor, n_trials = 500)

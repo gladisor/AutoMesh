@@ -9,7 +9,5 @@
 #SBATCH --output=log.out
 #SBATCH --mail-user=tristan.shah@sjsu.edu
 
-export CUDA_LAUNCH_BLOCKING=1
-
 source /scratch/htc/tshah/miniconda3/bin/activate automesh2
 srun python /scratch/htc/tshah/AutoMesh/scripts/main.py

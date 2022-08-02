@@ -1,8 +1,2 @@
 GraphNorm:
   obj: !!python/name:torch_geometric.nn.norm.graph_norm.GraphNorm ''
-
-LayerNorm:
-  obj: !!python/name:torch_geometric.nn.norm.layer_norm.LayerNorm ''
-
-InstanceNorm:
-  obj: !!python/name:torch_geometric.nn.norm.layer_norm.LayerNorm ''

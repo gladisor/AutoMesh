@@ -55,3 +55,4 @@ class AutoMeshPruning(Callback):
             trainer.callback_metrics['pruned'] = should_stop
 
         trainer.should_stop = trainer.training_type_plugin.broadcast(should_stop)
+        

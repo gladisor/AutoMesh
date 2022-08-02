@@ -1,21 +1,20 @@
 ## defaults
 in_channels: 3
 out_channels: 8
-# edge_dim: 3
 concat: false
-hidden_channels: 250
-num_layers: 6
+# hidden_channels: 250
+# num_layers: 6
+edge_dim: 4
 
-## ranges
-# hidden_channels:
-# - 32
-# - 64
-# - 128
-# - 256
+# ranges
+hidden_channels:
+- 128
+- 256
+- 512
 
-# num_layers: !!python/tuple
-# - 2
-# - 20
+num_layers: !!python/tuple
+- 4
+- 8
 
 lr: !!python/tuple
 - 1.0e-05
