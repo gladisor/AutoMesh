@@ -77,7 +77,7 @@ def heatmap_regressor(trial: Trial):
         accelerator = 'auto',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
-        max_epochs = 100,
+        max_epochs = 500,
         logger = logger,
         callbacks = [
             tracker, 
@@ -96,46 +96,40 @@ def heatmap_regressor(trial: Trial):
 
 if __name__ == '__main__':
 
-    db_name = 'database.db'
-    db = sqlite3.connect(db_name)
+    # db_name = 'database.db'
+    # db = sqlite3.connect(db_name)
 
-    study = create_study(
-        direction = 'minimize',
-        sampler = samplers.TPESampler(),
-        storage = f'sqlite:///{db_name}')
+    # study = create_study(
+    #     direction = 'minimize',
+    #     sampler = samplers.TPESampler(),
+    #     storage = f'sqlite:///{db_name}')
 
-    study.optimize(heatmap_regressor, n_trials = 500)
+    # study.optimize(heatmap_regressor, n_trials = 500)
 
-    # ## For evaluating a fixed trial
-    # trial = FixedTrial({
-    #     ## model
-    #     'model': 'ParamGCN',
-    #     'conv_layer': 'SAGEConv',
-    #     'act': 'ReLU',
-    #     'dropout': 0.5,
-    #     'in_channels': 3,
-    #     'hidden_channels': 250,
-    #     'num_layers': 6,
-    #     'out_channels': 8,
-    #     'norm': 'GraphNorm',
-    #     'normalize': False,
-    #     'root_weight': True,
-    #     'aggr': 'mean',
+    ## For evaluating a fixed trial
+    trial = FixedTrial({
+        ## model
+        'model': 'ParamGCN',
+        'conv_layer': 'GATv2Conv',
+        'act': 'LeakyReLU',
+        'negative_slope': 0.04876889,
+        'dropout': 0.1,
+        'in_channels': 3,
+        'hidden_channels': 128,
+        'num_layers': 7,
+        'out_channels': 8,
+        'norm': 'GraphNorm',
+        'heads': 3,
+        'add_self_loops': True,
 
-    #     ## loss
-    #     # 'loss_func': 'FocalLoss',
-    #     # 'alpha_f': 0.6811,
-    #     # 'gamma_f': 0.81877,
-    #     'loss_func': 'AdaptiveWingLoss',
-    #     'omega': 14.0,
-    #     'theta': 0.5,
-    #     'epsilon': 1.0,
-    #     'alpha': 2.1,
-        
-    #     ## optimizer
-    #     'opt': 'Adam',
-    #     'lr': 0.00047760,
-    #     'weight_decay': 1e-05
-    # })
+        'loss_func': 'FocalTverskyLoss',
+        'alpha_t': 0.03401540046,
+        'gamma_ft': 1.5437116,
 
-    # heatmap_regressor(trial)
+        ## optimizer
+        'opt': 'Adam',
+        'lr': 0.000751094,
+        'weight_decay': 4e-05
+    })
+
+    heatmap_regressor(trial)

@@ -6,8 +6,8 @@
 #SBATCH --mem=64G
 #SBATCH --time=24:00:00
 #SBATCH --job-name am_edge
-#SBATCH --output=log.out
+#SBATCH --output=run.out
 #SBATCH --mail-user=tristan.shah@sjsu.edu
 
 source /scratch/htc/tshah/miniconda3/bin/activate automesh2
-srun python /scratch/htc/tshah/AutoMesh/scripts/main.py
+srun python /scratch/htc/tshah/AutoMesh/scripts/run.py
