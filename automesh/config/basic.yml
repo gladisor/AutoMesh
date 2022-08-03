@@ -13,7 +13,7 @@ hidden_channels:
 - 512
 
 num_layers: !!python/tuple
-- 4
+- 2
 - 8
 
 lr: !!python/tuple

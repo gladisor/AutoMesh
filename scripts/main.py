@@ -41,14 +41,16 @@ def heatmap_regressor(trial: Trial):
     transform = T.Compose([
         preprocess_pipeline(), 
         rotation_pipeline(degrees=25),
-	T.GenerateMeshNormals(),
+	    T.GenerateMeshNormals(),
         T.PointPairFeatures(),
         ])
 
-    train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 1.0, transform = transform)
-    val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 1.0, transform = transform)
+    sigma = trial.suggest_float('sigma', 0.5, 3.0)
+    
+    train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = sigma, transform = transform)
+    val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = sigma, transform = transform)
 
-    batch_size = 3
+    batch_size = trial.suggest_int('batch_size', 1, 7)
     data = LightningDataset(
         train_dataset = train,
         val_dataset = val,
@@ -77,7 +79,7 @@ def heatmap_regressor(trial: Trial):
         accelerator = 'auto',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
-        max_epochs = 500,
+        max_epochs = 100,
         logger = logger,
         callbacks = [
             tracker, 
@@ -96,40 +98,40 @@ def heatmap_regressor(trial: Trial):
 
 if __name__ == '__main__':
 
-    # db_name = 'database.db'
-    # db = sqlite3.connect(db_name)
+    db_name = 'database.db'
+    db = sqlite3.connect(db_name)
 
-    # study = create_study(
-    #     direction = 'minimize',
-    #     sampler = samplers.TPESampler(),
-    #     storage = f'sqlite:///{db_name}')
+    study = create_study(
+        direction = 'minimize',
+        sampler = samplers.TPESampler(),
+        storage = f'sqlite:///{db_name}')
 
-    # study.optimize(heatmap_regressor, n_trials = 500)
+    study.optimize(heatmap_regressor, n_trials = 500)
 
-    ## For evaluating a fixed trial
-    trial = FixedTrial({
-        ## model
-        'model': 'ParamGCN',
-        'conv_layer': 'GATv2Conv',
-        'act': 'LeakyReLU',
-        'negative_slope': 0.04876889,
-        'dropout': 0.1,
-        'in_channels': 3,
-        'hidden_channels': 128,
-        'num_layers': 7,
-        'out_channels': 8,
-        'norm': 'GraphNorm',
-        'heads': 3,
-        'add_self_loops': True,
+    # ## For evaluating a fixed trial
+    # trial = FixedTrial({
+    #     ## model
+    #     'model': 'ParamGCN',
+    #     'conv_layer': 'GATv2Conv',
+    #     'act': 'LeakyReLU',
+    #     'negative_slope': 0.04876889,
+    #     'dropout': 0.1,
+    #     'in_channels': 3,
+    #     'hidden_channels': 128,
+    #     'num_layers': 2,
+    #     'out_channels': 8,
+    #     'norm': 'GraphNorm',
+    #     'heads': 1,
+    #     'add_self_loops': True,
 
-        'loss_func': 'FocalTverskyLoss',
-        'alpha_t': 0.03401540046,
-        'gamma_ft': 1.5437116,
+    #     'loss_func': 'FocalTverskyLoss',
+    #     'alpha_t': 0.03401540046,
+    #     'gamma_ft': 1.5437116,
 
-        ## optimizer
-        'opt': 'Adam',
-        'lr': 0.000751094,
-        'weight_decay': 4e-05
-    })
+    #     ## optimizer
+    #     'opt': 'Adam',
+    #     'lr': 0.000751094,
+    #     'weight_decay': 4e-05
+    # })
 
-    heatmap_regressor(trial)
+    # heatmap_regressor(trial)
