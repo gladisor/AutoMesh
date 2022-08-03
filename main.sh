@@ -4,9 +4,9 @@
 #SBATCH --gpus-per-node=4
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=64G
-#SBATCH --time=24:00:00
-#SBATCH --job-name am_edge
-#SBATCH --output=run.out
+#SBATCH --time=06:00:00
+#SBATCH --job-name am_edge_1.0
+#SBATCH --output=log.out
 #SBATCH --mail-user=tristan.shah@sjsu.edu
 
 source /scratch/htc/tshah/miniconda3/bin/activate automesh2

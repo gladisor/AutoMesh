@@ -37,18 +37,18 @@ import automesh.models.architectures
 
 def heatmap_regressor(trial: Trial):
     seed_everything(42)
-    
+
     transform = T.Compose([
         preprocess_pipeline(), 
-        rotation_pipeline(degrees=50),
-        T.GenerateMeshNormals(),
+        rotation_pipeline(degrees=25),
+	T.GenerateMeshNormals(),
         T.PointPairFeatures(),
         ])
 
-    train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 2.0, transform = transform)
-    val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 2.0, transform = transform)
-    
-    batch_size = 1
+    train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = 1.0, transform = transform)
+    val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = 1.0, transform = transform)
+
+    batch_size = 3
     data = LightningDataset(
         train_dataset = train,
         val_dataset = val,
@@ -59,13 +59,13 @@ def heatmap_regressor(trial: Trial):
     params = selector.params()
 
     pprint(selector.params())
-    
+
     if 'norm' in params['model_kwargs'].keys():
         params['model_kwargs']['norm'] = params['model_kwargs']['norm'](params['model_kwargs']['hidden_channels'])
         params['model_kwargs'].pop('norm_kwargs')
-        
+
     model = HeatMapRegressor(**selector.params())
-    
+
     ## callbacks
     tracker = OptimalMetric('minimize', 'val_nme')
     pruner = AutoMeshPruning(trial, 'val_nme')
