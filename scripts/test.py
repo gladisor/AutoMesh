@@ -9,28 +9,34 @@ import shutil
 from automesh.data.data import LeftAtriumHeatMapData
 
 def build_cross_validation_datasets(source: str, dest: str, sets: int, split: float):
-    paths = glob(os.path.join(source, '/*.ply'))
+    paths = glob(os.path.join(source, '*.ply'))
     mesh, branch = LeftAtriumHeatMapData.get_ordered_paths(paths)
     split_idx = int(len(mesh) * split)
 
-    print(mesh)
-
     for i in range(sets):
         set_dest = os.path.join(dest, f'cv_{i}/')
-        os.makedirs(set_dest, exist_ok = True)
-        data = list(zip(mesh, branch))
+        train_dest = os.path.join(set_dest, 'train/raw')
+        val_dest = os.path.join(set_dest, 'val/raw')
 
-        print(mesh, branch)
+        os.makedirs(set_dest)
+        os.makedirs(train_dest)
+        os.makedirs(val_dest)
+
+        data = list(zip(mesh, branch))
         random.shuffle(data)
 
-        for x, y in zip(*data):
-            print(x)
-            shutil.copy(x, dest)
+        for x, y in data[0:split_idx]:
+            shutil.copy(x, train_dest)
+            shutil.copy(y, train_dest)
+        
+        for x, y in data[split_idx:]:
+            shutil.copy(x, val_dest)
+            shutil.copy(y, val_dest)
 
 if __name__ == '__main__':
 
     build_cross_validation_datasets(
         source = 'data/full_dataset', 
         dest = 'data',
-        sets = 2,
-        split = 0.9)
+        sets = 5,
+        split = 0.95)
