@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=64G
 #SBATCH --time=06:00:00
-#SBATCH --job-name am_edge_1.0
+#SBATCH --job-name am_eval
 #SBATCH --output=log.out
 #SBATCH --mail-user=tristan.shah@sjsu.edu
 

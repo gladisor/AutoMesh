@@ -35,18 +35,17 @@ from automesh.callbacks import OptimalMetric, AutoMeshPruning
 from automesh.config.param_selector import Selector
 import automesh.models.architectures
 
-def heatmap_regressor(trial: Trial):
+def heatmap_regressor(trial: Trial, num_epochs = 100):
     seed_everything(42)
 
     transform = T.Compose([
         preprocess_pipeline(), 
         rotation_pipeline(degrees=25),
-	    T.GenerateMeshNormals(),
+	T.GenerateMeshNormals(),
         T.PointPairFeatures(),
         ])
 
     sigma = trial.suggest_float('sigma', 0.5, 3.0)
-    
     train = LeftAtriumHeatMapData(root = 'data/GRIPS22/train', sigma = sigma, transform = transform)
     val = LeftAtriumHeatMapData(root = 'data/GRIPS22/val', sigma = sigma, transform = transform)
 
@@ -72,17 +71,17 @@ def heatmap_regressor(trial: Trial):
     tracker = OptimalMetric('minimize', 'val_nme')
     pruner = AutoMeshPruning(trial, 'val_nme')
 
-    logger = CSVLogger(save_dir = 'results', name = 'edge_features')
+    logger = CSVLogger(save_dir = 'results', name = 'best')
 
     trainer = Trainer(
         num_sanity_val_steps=0,
         accelerator = 'auto',
         strategy = DDPSpawnPlugin(find_unused_parameters = False),
         devices = 4,
-        max_epochs = 100,
+        max_epochs = num_epochs,
         logger = logger,
         callbacks = [
-            tracker, 
+            tracker,
             pruner
         ])
 
@@ -98,7 +97,7 @@ def heatmap_regressor(trial: Trial):
 
 if __name__ == '__main__':
 
-    db_name = 'database.db'
+    db_name = 'big.db'
     db = sqlite3.connect(db_name)
 
     study = create_study(

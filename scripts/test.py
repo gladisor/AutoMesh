@@ -26,11 +26,11 @@ def build_cross_validation_datasets(source: str, dest: str, sets: int, split: fl
         for x, y in zip(*data):
             print(x)
             shutil.copy(x, dest)
-        
+
 if __name__ == '__main__':
 
     build_cross_validation_datasets(
         source = 'data/full_dataset', 
         dest = 'data',
-        sets = 2, 
+        sets = 2,
         split = 0.9)
