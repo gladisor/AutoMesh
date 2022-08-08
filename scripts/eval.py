@@ -3,6 +3,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pickle
+import glob
 
 import torch_geometric.transforms as T
 import optuna
@@ -13,19 +14,39 @@ from automesh.data.data import LeftAtriumHeatMapData
 from automesh.models.heatmap import HeatMapRegressor
 from automesh.data.transforms import preprocess_pipeline, rotation_pipeline
 
+def combine(data):
+    data = pd.concat(data, axis = 1).mean(axis = 'columns')
+    data = data.reset_index(drop = True)
+    data = data.to_frame(name = 'data')
+
+    return data
 
 if __name__ == '__main__':
 
-    data = pd.read_csv('results/best/version_1/metrics.csv')
-    val = data[['epoch', 'val_nme', 'val_loss']].dropna()
-    train = data[['epoch', 'train_loss']].dropna()
+    val_losses = []
+    val_nmes = []
+    train_losses = []
+
+    for path in glob.glob('results/validation/*'):
+        data = pd.read_csv(os.path.join(path, 'metrics.csv'))
+        val = data[['epoch', 'val_nme', 'val_loss']].dropna()
+        train = data[['epoch', 'train_loss']].dropna()
+
+        val_losses.append(val['val_loss'])
+        val_nmes.append(val['val_nme'])
+        train_losses.append(train['train_loss'])
+
+    val_losses = combine(val_losses)
+    val_nmes = combine(val_nmes)
+    train_losses = combine(train_losses)
 
     fig, ax = plt.subplots(2, 1)
     fig.set_size_inches(10, 8)
 
-    ax[0].plot(val['epoch'], val['val_nme'])
-    ax[1].plot(train['epoch'], train['train_loss'])
-    ax[1].plot(val['epoch'], val['val_loss'])
+    ax[0].plot(val_nmes.index, val_nmes['data'])
+    ax[0].set_ylabel('Normalized Mean Error')
+    ax[1].plot(train_losses.index, train_losses['data'])
+    ax[1].plot(val_losses.index, val_losses['data'])
     plt.show()
 
 #    transform = T.Compose([

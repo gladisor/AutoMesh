@@ -40,9 +40,9 @@ def heatmap_regressor(trial: Trial, path = 'data/GRIPS22', num_epochs = 100):
 
     ## transformation pipeline for edge features
     transform = T.Compose([
-        preprocess_pipeline(), 
+        preprocess_pipeline(),
         rotation_pipeline(degrees=25),
-	    T.GenerateMeshNormals(),
+	T.GenerateMeshNormals(),
         T.PointPairFeatures(),
         ])
 
@@ -77,7 +77,7 @@ def heatmap_regressor(trial: Trial, path = 'data/GRIPS22', num_epochs = 100):
     ## callbacks
     tracker = OptimalMetric('minimize', 'val_nme')
     pruner = AutoMeshPruning(trial, 'val_nme')
-    logger = CSVLogger(save_dir = 'results', name = 'best')
+    logger = CSVLogger(save_dir = 'results', name = 'validation')
 
     ## instantiate trainer object
     trainer = Trainer(

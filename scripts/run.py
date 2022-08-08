@@ -11,11 +11,12 @@ if __name__ == '__main__':
     study = optuna.load_study(study_name = 'no-name-836a7af2-5fab-4947-aa61-6e7243da6e80', storage = 'sqlite:///big.db')
 
     datasets = [
-        'cv_0',
-        'cv_1',
-        'cv_2',
-        'cv_3',
-        'cv_4']
-    
+        'data/cv_0',
+        'data/cv_1',
+        'data/cv_2',
+        'data/cv_3',
+        'data/cv_4']
+
     for dataset in datasets:
+        print(dataset)
         heatmap_regressor(study.best_trial, path = dataset, num_epochs = 200)
