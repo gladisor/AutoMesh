@@ -1,9 +1,11 @@
 Adam:
   obj: !!python/name:torch.optim.adam.Adam ''
   params:
+    lr: basic
     weight_decay:
     - 0.0
-    - 0.1
-    - 0.001
-    - 0.0001
-    - 1.0e-06
+    - 0.00001
+    - 0.00002
+    - 0.00004
+    - 0.00008
+    - 0.00016

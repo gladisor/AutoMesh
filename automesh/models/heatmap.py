@@ -6,9 +6,9 @@ import torch.nn as nn
 from torch.optim import Optimizer
 from torch_geometric.data import Data, Batch
 from pytorch_lightning import LightningModule
-import yaml
 
 from automesh.metric import NormalizedMeanError
+from automesh.loss import ChannelWiseLoss
 
 class HeatMapRegressor(LightningModule):
     """
@@ -16,8 +16,8 @@ class HeatMapRegressor(LightningModule):
     """
     def __init__(
             self,
-            base: nn.Module,
-            base_kwargs: Dict[str, Any],
+            model: nn.Module,
+            model_kwargs: Dict[str, Any],
             opt: Optimizer,
             opt_kwargs: Dict[str, Any],
             loss_func: nn.Module,
@@ -25,10 +25,10 @@ class HeatMapRegressor(LightningModule):
         super().__init__()
 
         ## constructing graph neural network
-        self.base = base(**base_kwargs)
+        self.model = model(**model_kwargs)
         self.opt = opt
         self.opt_kwargs = opt_kwargs
-        self.loss_func = loss_func(**loss_func_kwargs)
+        self.loss_func = ChannelWiseLoss(loss_func(**loss_func_kwargs))
         self.nme = NormalizedMeanError()
 
         ## saving state
@@ -41,19 +41,48 @@ class HeatMapRegressor(LightningModule):
 
     def forward(self, x: Union[Data, Batch]) -> torch.tensor:
         ## use edge attributes in forward pass if they exist
+        x_pos = x.pos.clone()
+        x_edge_index = x.edge_index.clone()
+
+        has_edge_attr = False
         if x.edge_attr != None:
-            return self.base(x.pos, x.edge_index, x.edge_attr)
+            has_edge_attr = True
+            x_edge_attr = x.edge_attr.clone()
+
+        del x
+
+        if has_edge_attr:
+            y = self.model(x_pos, x_edge_index, x_edge_attr)
         else:
-            return self.base(x.pos, x.edge_index)
+            y =  self.model(x_pos, x_edge_index)
+
+        if torch.isnan(y).any():
+            print('Output of network is nan')
+            print(y)
+            print()
+            print('Input to network: ')
+            print('position')
+            print(x_pos)
+
+            print('edges')
+            print(x_edge_index)
+
+            print('edge_attr')
+            print(x_edge_attr)
+        return y
 
     def configure_optimizers(self):
-        return self.opt(self.base.parameters(), **self.opt_kwargs)
+        return self.opt(self.model.parameters(), **self.opt_kwargs)
 
-    def landmark_loss(self, y_hat, y) -> torch.tensor:
-        ## compute landmark loss on each channel
-        loss = 0.0
-        for c in range(y_hat.shape[1]):
-            loss += self.loss_func(y_hat[:, c], y[:, c])
+    def landmark_loss(self, y_hat: torch.Tensor, y: torch.Tensor):
+
+        loss = self.loss_func(y_hat, y)
+        
+        # assert y_hat.shape == y.shape
+                
+        # loss = 0.0
+        # for c in range(y_hat.shape[1]):
+        #     loss += self.loss_func(y_hat[:, c], y[:, c])
 
         return loss
 
@@ -68,6 +97,7 @@ class HeatMapRegressor(LightningModule):
             on_step=False,
             on_epoch=True, 
             sync_dist = True)
+
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -99,6 +129,3 @@ class HeatMapRegressor(LightningModule):
             )
 
         return {'val_nme': self.nme, 'val_loss': val_loss}
-    
-    def on_validation_epoch_end(self) -> None:
-        return 

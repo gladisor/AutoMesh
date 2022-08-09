@@ -1,11 +1,49 @@
-hidden_channels: !!python/tuple
-- 32
-- 256
+## defaults
 in_channels: 3
+out_channels: 8
+concat: false
+# hidden_channels: 250
+# num_layers: 6
+edge_dim: 4
+
+# ranges
+hidden_channels:
+- 128
+- 256
+- 512
+
+num_layers: !!python/tuple
+- 2
+- 8
+
 lr: !!python/tuple
 - 1.0e-05
 - 0.001
-num_layers: !!python/tuple
+
+dropout:
+- 0.0
+- 0.1
+- 0.2
+- 0.3
+- 0.4
+- 0.5
+
+depth: !!python/tuple
 - 3
-- 8
-out_channels: 8
+- 6
+
+pool_ratios: !!python/tuple
+- 0.5
+- 0.9
+
+heads: !!python/tuple
+- 1
+- 5
+
+K: !!python/tuple
+- 1
+- 4
+
+add_self_loops:
+- true
+- false

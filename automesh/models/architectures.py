@@ -1,28 +1,16 @@
 import torch.nn as nn
 from typing import Dict, Any
-from torch_geometric.nn.models import GraphUNet
 from torch_geometric.nn.models.basic_gnn import BasicGNN
 from torch_geometric.nn.conv import MessagePassing
 
 class ParamGCN(BasicGNN):
-    def __init__(self,conv_layer: MessagePassing, 
-                 conv_layer_kwargs: Dict[str, Any], **kwargs):
-        self.conv_layer=conv_layer
-        self.conv_layer_kwargs=conv_layer_kwargs
-        print(conv_layer_kwargs)
-        print(kwargs)
-        print("XXXXXXXXXXXXXXXXXXXX")
+    def __init__(self,conv_layer: MessagePassing, conv_layer_kwargs: Dict[str, Any], **kwargs):
+        self.conv_layer = conv_layer
+        self.conv_layer_kwargs = conv_layer_kwargs
         super().__init__(**kwargs)
-  
-    def init_conv(self, in_channels: int, out_channels: int,
-                  **kwargs) -> MessagePassing:
-        return self.conv_layer(in_channels, out_channels,**self.conv_layer_kwargs)
-    
 
-
-
-
-
+    def init_conv(self, in_channels: int, out_channels: int, **kwargs) -> MessagePassing:
+        return self.conv_layer(in_channels, out_channels, **self.conv_layer_kwargs)
 
 # class ParamGraphUNet(GraphUNet):
 #     def __init__(self, 

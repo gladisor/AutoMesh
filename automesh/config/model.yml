@@ -1,0 +1,49 @@
+ParamGCN:
+  obj: !!python/name:automesh.models.architectures.ParamGCN ''
+  params:
+    in_channels: basic
+    hidden_channels: basic
+    num_layers: basic
+    out_channels: basic
+    dropout: basic
+    
+    conv_layer: not_basic
+    act: not_basic
+    norm: not_basic
+
+# GAT:
+#   obj: !!python/name:torch_geometric.nn.models.basic_gnn.GAT ''
+#   params:
+#     in_channels: basic
+#     hidden_channels: basic
+#     num_layers: basic
+#     out_channels: basic
+#     dropout: basic
+#     edge_dim: basic
+#     heads: basic
+#     concat: basic
+#     jk: basic
+
+#     act: not_basic
+#     norm: not_basic
+
+# GraphUNet:
+#   obj: !!python/name:torch_geometric.nn.models.graph_unet.GraphUNet ''
+#   params:
+#     in_channels: basic
+#     hidden_channels: basic
+#     depth: basic
+#     out_channels: basic
+#     pool_ratios: basic
+
+# GraphSAGE:
+#   obj: !!python/name:torch_geometric.nn.models.basic_gnn.GraphSAGE ''
+#   params:
+#     in_channels: basic
+#     hidden_channels: basic
+#     num_layers: basic
+#     out_channels: basic
+#     dropout: basic
+#     act: not_basic
+#     norm: not_basic
+

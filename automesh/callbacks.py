@@ -1,3 +1,4 @@
+import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import Callback
 from optuna import Trial
@@ -40,17 +41,18 @@ class AutoMeshPruning(Callback):
 
         self.trial = trial
         self.metric = metric
-        self.pruned = False
 
     def on_validation_end(self, trainer: Trainer, pl_module: HeatMapRegressor):
         score = trainer.callback_metrics.get(self.metric)
+
+        assert isinstance(score, torch.Tensor)
         epoch = pl_module.current_epoch
 
         should_stop = False
         if trainer.is_global_zero:
             self.trial.report(score, epoch)
             should_stop = self.trial.should_prune()
-            self.pruned = should_stop
             trainer.callback_metrics['pruned'] = should_stop
 
         trainer.should_stop = trainer.training_type_plugin.broadcast(should_stop)
+        

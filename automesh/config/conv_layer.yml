@@ -1,32 +1,49 @@
+# TAGConv:
+#   obj: !!python/name:torch_geometric.nn.conv.tag_conv.TAGConv ''
+#   params:
+#     K: basic
+
+# SGConv:
+#   obj: !!python/name:torch_geometric.nn.conv.sg_conv.SGConv ''
+#   params:
+#     K: basic
+#     add_self_loops: basic
+
+# SAGEConv:
+#   obj: !!python/name:torch_geometric.nn.conv.sage_conv.SAGEConv ''
+#   params:
+#     aggr:
+#       - mean
+#       - max
+#     normalize:
+#       - true
+#       - false
+#     root_weight:
+#       - true
+#       - false
+
+TransformerConv: 
+  obj: !!python/name:torch_geometric.nn.conv.transformer_conv.TransformerConv ''
+  params:
+    edge_dim: basic
+    heads: basic
+    concat: basic
+    beta:
+    - true
+    - false
+
 GATConv:
   obj: !!python/name:torch_geometric.nn.conv.gat_conv.GATConv ''
   params:
-    add_self_loops:
-    - true
-    - false
-    concat:
-    - false
-    dropout: !!python/tuple
-    - 0.0
-    - 0.5
-    heads: !!python/tuple
-    - 1
-    - 8
-GCNConv:
-  obj: !!python/name:torch_geometric.nn.conv.gcn_conv.GCNConv ''
+    edge_dim: basic
+    heads: basic
+    concat: basic
+    add_self_loops: basic
+
+GATv2Conv:
+  obj: !!python/name:torch_geometric.nn.conv.gatv2_conv.GATv2Conv ''
   params:
-    add_self_loops:
-    - true
-    - false
-    improved:
-    - true
-    - false
-    normalize:
-    - true
-    - false
-SAGEConv:
-  obj: !!python/name:torch_geometric.nn.conv.sage_conv.SAGEConv ''
-  params:
-    normalize:
-    - true
-    - false
+    edge_dim: basic
+    heads: basic
+    concat: basic
+    add_self_loops: basic

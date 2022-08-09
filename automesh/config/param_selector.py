@@ -3,74 +3,81 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import yaml
-from typing import Tuple, Dict
-
+from typing import Tuple, Dict, List
 
 from optuna import Trial
-from optuna.trial import FixedTrial
-
-
-class ParamSelector:
-    def __init__(self, trial: Trial):
+    
+class Selector:
+    def __init__(self, trial: Trial, spec: List[str]):
         self.trial = trial
-        #self.select_params('conv_layer')
+        self.spec = spec
         
-        #params=self.get_basic_params()
-        
-        
-    def select_params(self, config_key: str) -> Tuple[object, Dict]:
-        path=os.path.join('automesh/config/' + config_key + '.yml')
+        for file in spec:
+            setattr(self, file, self.select(file))
+ 
+    def read_yml(self, name: str) -> Dict:
+        path=os.path.join('automesh/config/'+ name +'.yml')
         with open(path, 'r') as stream:
-            try:
-                parsed_yaml=yaml.full_load(stream)
-               
-            except yaml.YAMLError as exc:
-                pass
-        obj_names = list(parsed_yaml.keys())
-      
+            parsed_yml = yaml.full_load(stream)
+        
+        return parsed_yml
+    
+    def suggest(self, key, value):
+   
+        if type(value) == tuple:
+            if type(value[0]) == int:
+                value = self.trial.suggest_int(key, value[0], value[1])
+            elif type(value[0])== float:
+                value = self.trial.suggest_float(key, value[0], value[1])
+        elif type(value) == list:
+            value = self.trial.suggest_categorical(key, value)
+        else:
+            pass
+        
+        return value
+
+    def select(self, config_key) -> Tuple:
+        
+        parsed_yml = self.read_yml(config_key)
+        obj_names = list(parsed_yml.keys())
         obj_name = self.trial.suggest_categorical(config_key, obj_names)
         
-        obj = parsed_yaml[obj_name]['obj']  
-        params={}
+        # if file simply contains a list of categorical options simply return selection
+        if 'params' not in parsed_yml[obj_name]:
+            
+            return (parsed_yml[obj_name]['obj'], {})
+        else:
+            obj_params = parsed_yml[obj_name]['params']
         
-        if 'params' in parsed_yaml[obj_name]: 
-            for arg in parsed_yaml[obj_name]['params']:
-                value=parsed_yaml[obj_name]['params'][arg]
-                if type(value) == list:
-                    params[arg] = self.trial.suggest_categorical(arg, value)
-                elif type(value) == tuple:
-                    if type(value[0]) == int:
-                        params[arg] = self.trial.suggest_int(arg, value[0], value[1])
-                    elif type(value[0])== float:
-                        params[arg] = self.trial.suggest_float(arg, value[0], value[1])
-          
-        return (obj, params)
+        d = {}
+
+        for key in obj_params:
+            if parsed_yml[obj_name]['params'][key] == 'not_basic':
+                
+                obj, kwargs = self.select(key)                
+                d={**d, key+'_kwargs': kwargs, key: obj}
+      
+            elif parsed_yml[obj_name]['params'][key] == 'basic':
+                
+                basic = self.read_yml('basic')
+                d.update({
+                    key: self.suggest(key, basic[key])
+                    })
+                
+            else:
+                d.update({
+                    key: self.suggest(key, parsed_yml[obj_name]['params'][key])
+                    })
+                
+        return (parsed_yml[obj_name]['obj'], d)
         
-    
-        #suggesting base parameters: currently only hidden_channels, num_layers, lr
-    def get_basic_params(self,config_key: str) ->  Dict:
-    
-        path=os.path.join('automesh/config/'+ config_key +'.yml')
-        with open(path, 'r') as stream:
-            try:
-                parsed_yaml=yaml.full_load(stream)
-            except:
-                pass
         
-        params_names = list(parsed_yaml.keys())       
-        params={}
+    def params(self) -> Dict:
+        d = {}
         
-        for param_name in params_names:
-            value=parsed_yaml[param_name]            
-            if type(value) == tuple:
-                if type(value[0]) == int:
-                    params[param_name] = self.trial.suggest_int(param_name, value[0], value[1])
-                elif type(value[0])== float:
-                    params[param_name] = self.trial.suggest_float(param_name, value[0], value[1])
-            elif type(value) == list:
-                params[param_name] = self.trial.suggest_categorical(param_name, value)
-            elif (type(value)== int) or (type(value)==float):
-                params[param_name]=value
-                    
-        return params
- 
+        for file in self.spec:
+            obj, obj_kwargs = getattr(self, file)
+            d[file] = obj     
+            d[file + '_kwargs'] = obj_kwargs
+            
+        return d

@@ -1,16 +1,12 @@
-ELU:
-  obj: !!python/name:torch.nn.modules.activation.ELU ''
 GELU:
   obj: !!python/name:torch.nn.modules.activation.GELU ''
+
 LeakyReLU:
   obj: !!python/name:torch.nn.modules.activation.LeakyReLU ''
   params:
     negative_slope: !!python/tuple
     - 0.01
     - 0.1
+    
 ReLU:
   obj: !!python/name:torch.nn.modules.activation.ReLU ''
-Sigmoid:
-  obj: !!python/name:torch.nn.modules.activation.Sigmoid ''
-Tanh:
-  obj: !!python/name:torch.nn.modules.activation.Tanh ''

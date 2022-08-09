@@ -2,22 +2,16 @@
 
 ## Setup:
 
-WARNING: These setup instructions have not been tested for gpu
-
-To install
+To setup the conda environment
 ```
-conda env create -f environment.yml
-```
+conda env create -n automesh python=3.8
+conda activate automesh
+conda install pytorch torchvision torchaudio -c pytorch
+pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-1.12.0+cu113.html
 
-To update
-```
-conda env update -f environment.yml --prune
-```
-
-## Usage
-
-Our dataset class expects the mesh data to be in the form of .ply files. Data must be contained in a subfolder titled "raw".
-
-```
-data = LeftAtriumData('path/to/data')
+pip install class_resolver
+pip install pytorch
+pip install torchmetrics
+pip install open3d
+pip install optuna
 ```
