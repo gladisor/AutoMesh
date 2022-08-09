@@ -23,31 +23,39 @@ def combine(data):
 
 if __name__ == '__main__':
 
-    val_losses = []
-    val_nmes = []
-    train_losses = []
+    # val_losses = []
+    # val_nmes = []
+    # train_losses = []
 
-    for path in glob.glob('results/validation/*'):
-        data = pd.read_csv(os.path.join(path, 'metrics.csv'))
-        val = data[['epoch', 'val_nme', 'val_loss']].dropna()
-        train = data[['epoch', 'train_loss']].dropna()
+    # for path in glob.glob('results/validation/*'):
+    #     data = pd.read_csv(os.path.join(path, 'metrics.csv'))
+    #     val = data[['epoch', 'val_nme', 'val_loss']].dropna()
+    #     train = data[['epoch', 'train_loss']].dropna()
 
-        val_losses.append(val['val_loss'])
-        val_nmes.append(val['val_nme'])
-        train_losses.append(train['train_loss'])
+    #     val_losses.append(val['val_loss'])
+    #     val_nmes.append(val['val_nme'])
+    #     train_losses.append(train['train_loss'])
 
-    val_losses = combine(val_losses)
-    val_nmes = combine(val_nmes)
-    train_losses = combine(train_losses)
+    # val_losses = combine(val_losses)
+    # val_nmes = combine(val_nmes)
+    # train_losses = combine(train_losses)
 
-    fig, ax = plt.subplots(2, 1)
-    fig.set_size_inches(10, 8)
+    # fig, ax = plt.subplots(2, 1)
+    # fig.set_size_inches(10, 7)
 
-    ax[0].plot(val_nmes.index, val_nmes['data'])
-    ax[0].set_ylabel('Normalized Mean Error')
-    ax[1].plot(train_losses.index, train_losses['data'])
-    ax[1].plot(val_losses.index, val_losses['data'])
-    plt.show()
+    # ax[0].plot(val_nmes.index, val_nmes['data'])
+    # ax[0].set_ylabel('Normalized Mean Error (mm)')
+    # ax[0].grid()
+
+    # ax[1].plot(train_losses.index, train_losses['data'], label = 'Training Loss')
+    # ax[1].plot(val_losses.index, val_losses['data'], label = 'Validation Loss')
+    # ax[1].set_xlabel('Epochs')
+    # ax[1].set_ylabel('Loss')
+    # ax[1].grid()
+    # ax[1].legend()
+
+    # fig.suptitle('Cross Validation Training Results')
+    # plt.show()
 
 #    transform = T.Compose([
 #        preprocess_pipeline(), 
@@ -65,11 +73,20 @@ if __name__ == '__main__':
 #        val.visualize_predicted_points(i, model)
 #        val.display(i)
 
-    # study = pickle.load(open('study.pkl', 'rb'))
-    # for trial in study.trials:
-    #     intermediate_values = trial.storage.get_trial(trial._trial_id).intermediate_values
-    #     print(intermediate_values)
+    study = optuna.load_study(study_name = 'no-name-836a7af2-5fab-4947-aa61-6e7243da6e80', storage = 'sqlite:///big.db')
+    # optuna.visualization.plot_param_importances(study, 
+    #     params = [
+    #         'num_layers', 
+    #         'conv_layer', 
+    #         'loss_func', 
+    #         'batch_size', 
+    #         'sigma', 
+    #         'lr',
+    #         'dropout',
+    #         'act',
+    #         'hidden_channels',
+    #         'weight_decay',
+    #         'heads']).show()
 
-    # fig = optuna.visualization.plot_intermediate_values(study)
-    # fig.show()
+    optuna.visualization.plot_slice(study, params = ['num_layers']).show()
 
