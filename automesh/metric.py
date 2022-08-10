@@ -4,8 +4,14 @@ from pytorch_lightning.callbacks import Callback
 from pytorch_lightning import Trainer, LightningModule
 
 class NormalizedMeanError(Metric):
-    full_state_update = False
+    '''
+    Normalized mean error measures the average euclidian distance between pairs of points.
+    We use this metric to evaluate the distance between predicted branching points and true
+    branching points. This allows for robust comparison of different models even when they use 
+    different loss functions.
+    '''
 
+    full_state_update = False
     def __init__(self):
         super().__init__()
         self.add_state('distance', default = torch.tensor(0.0), dist_reduce_fx = 'sum')

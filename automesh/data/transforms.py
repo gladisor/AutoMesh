@@ -10,6 +10,10 @@ def preprocess_pipeline() -> Callable:
     ])
     
 def rotation_pipeline(degrees: float = 20) -> Callable:
+    '''
+    Applies rotation augmentation to the mesh. Rotates randomly on an axis + or - some
+    amount of degrees.
+    '''
     return T.Compose([
         T.RandomRotate(degrees, axis = 0),
         T.RandomRotate(degrees, axis = 1),

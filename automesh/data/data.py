@@ -13,13 +13,13 @@ from torch_geometric.data import Data, Dataset
 from scipy.spatial import distance
 
 class LeftAtriumData(Dataset):
-    """
+    '''
     Extracts information from a set of .ply files located in {root}/raw. Handles
     preprocessing and construction of a torch_geometric graph automatically. Will
     also apply any transformations specified. Labels for each data point will be
     the indexes of verticies in the mesh which are closest to the branching points
     contained in the LeftAtriumBranchPoints.ply files.
-    """
+    '''
     def __init__(self, root: str, triangles: int = 5000, transform = None, **kwargs) -> None:
 
         self.root = root
@@ -117,6 +117,11 @@ class LeftAtriumData(Dataset):
         o3d.visualization.draw_geometries([mesh])
 
 class LeftAtriumHeatMapData(LeftAtriumData):
+    '''
+    This class most likely could be replaced by a torch_geometric transform.
+    The main purpose of this class is to construct the target heatmap from the target
+    branching points.
+    '''
     def __init__(self, root: str, sigma: float = 1.0, **kwargs) -> None:
 
         super().__init__(root, **kwargs)

@@ -6,6 +6,16 @@ from optuna import Trial
 from automesh.models.heatmap import HeatMapRegressor
 
 class OptimalMetric(Callback):
+    '''
+    Used to keep track of the best evaluation metric encountered so far. 
+    It assumes that the metric has been logged at the end of the validation epoch.
+
+    Example:
+    
+    ```
+    tracker = OptimalMetric('minimize', 'val_nme')
+    ```
+    '''
     def __init__(self, direction: str, monitor: str):
         super().__init__()
         assert direction == 'maximize' or direction == 'minimize'
@@ -36,6 +46,17 @@ class OptimalMetric(Callback):
                 trainer.callback_metrics[self.name] = current_value
 
 class AutoMeshPruning(Callback):
+    '''
+    Attempt to allow optuna pruning to work with pytorch lightning multi device trainig.
+    Currently pruning only works with a single device training strategy. This AutoMeshPruning callback
+    does not seem to work properly yet though. Needs further testing and experimentation.
+
+    Example:
+
+    ```
+    pruner = AutoMeshPruning(trial, 'val_nme')
+    ```
+    '''
     def __init__(self, trial: Trial, metric: str):
         super().__init__()
 

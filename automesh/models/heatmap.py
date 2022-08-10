@@ -13,6 +13,13 @@ from automesh.loss import ChannelWiseLoss
 class HeatMapRegressor(LightningModule):
     """
     Predicts landmarks on a mesh by generating heatmap distributions per channel.
+    Loss is calculated independently per channel and summed. 
+
+    Example:
+    ```
+    selector = Selector(trial, ['model', 'loss_func', 'opt'])
+    model = HeatMapRegressor(**selector.params())
+    ```
     """
     def __init__(
             self,
@@ -75,15 +82,7 @@ class HeatMapRegressor(LightningModule):
         return self.opt(self.model.parameters(), **self.opt_kwargs)
 
     def landmark_loss(self, y_hat: torch.Tensor, y: torch.Tensor):
-
         loss = self.loss_func(y_hat, y)
-        
-        # assert y_hat.shape == y.shape
-                
-        # loss = 0.0
-        # for c in range(y_hat.shape[1]):
-        #     loss += self.loss_func(y_hat[:, c], y[:, c])
-
         return loss
 
     def training_step(self, batch: Batch, batch_idx) -> torch.tensor:
